@@ -22,3 +22,8 @@ openai:
 sentry:
   dsn: ${SENTRY_DNS}
   traces-sample-rate: 1.0
+
+jwt:
+  secret:
+    key: reshavalnikreshavalnikreshavalnikreshavalnikreshavalnikreshavalnikreshavalnikreshavalnikreshavalnikreshavalnik
+    jwtExpirationMs: 155520000000
