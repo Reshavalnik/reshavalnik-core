@@ -1,0 +1,19 @@
+spring:
+  application:
+    name: Reshavalnik
+  data:
+    mongodb:
+      uri: ${MONGO_URL}
+
+server:
+  port: 8080
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+
+sentry:
+  dsn: ${SENTRY_DNS}
+  traces-sample-rate: 1.0
