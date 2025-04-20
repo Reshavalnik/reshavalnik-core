@@ -2,14 +2,13 @@ package bg.reshavalnik.app.security.security.services;
 
 import bg.reshavalnik.app.security.dto.projection.UserDetailProjection;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.util.Collection;
+import java.util.List;
+import java.util.stream.Collectors;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-
-import java.util.Collection;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Getter
 @ToString(exclude = "password")
