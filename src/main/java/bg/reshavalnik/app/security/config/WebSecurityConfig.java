@@ -3,6 +3,7 @@ package bg.reshavalnik.app.security.config;
 import bg.reshavalnik.app.security.security.jwt.AuthEntryPointJwt;
 import bg.reshavalnik.app.security.security.jwt.AuthTokenFilter;
 import bg.reshavalnik.app.security.security.services.UserDetailsService;
+import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -20,8 +21,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-
-import java.util.List;
 
 @Configuration
 @EnableMethodSecurity
