@@ -11,8 +11,6 @@ import bg.reshavalnik.app.security.dto.request.SignupRequest;
 import bg.reshavalnik.app.security.dto.response.JwtResponse;
 import bg.reshavalnik.app.security.security.jwt.JwtUtils;
 import jakarta.validation.Valid;
-import java.util.HashSet;
-import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.slf4j.Logger;
@@ -71,9 +69,7 @@ public class SecurityService {
         String rawPassword = signUpRequest.getPassword();
         signUpRequest.setPassword(encoder.encode(rawPassword));
         User user = userMapper.mapToUser(signUpRequest);
-        Set<Role> roles = new HashSet<>();
-        roles.add(Role.ROLE_USER);
-        user.setRoles(roles);
+        user.setRoles(Role.ROLE_USER);
         userRepository.save(user);
 
         Authentication authentication =
