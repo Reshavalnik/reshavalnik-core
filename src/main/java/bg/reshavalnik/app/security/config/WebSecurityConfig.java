@@ -3,6 +3,7 @@ package bg.reshavalnik.app.security.config;
 import bg.reshavalnik.app.security.security.jwt.AuthEntryPointJwt;
 import bg.reshavalnik.app.security.security.jwt.AuthTokenFilter;
 import bg.reshavalnik.app.security.security.services.UserDetailsService;
+import jakarta.servlet.http.HttpServletResponse;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -18,6 +19,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -75,6 +77,15 @@ public class WebSecurityConfig {
         http.addFilterBefore(
                 authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
 
+        http.logout(
+                logout ->
+                        logout.logoutUrl("/auth/logout")
+                                .addLogoutHandler(new SecurityContextLogoutHandler())
+                                .logoutSuccessHandler(
+                                        (req, res, auth) -> {
+                                            res.setStatus(HttpServletResponse.SC_OK);
+                                        })
+                                .permitAll());
         return http.build();
     }
 
