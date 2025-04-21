@@ -1,10 +1,10 @@
 package bg.reshavalnik.app.security.security.services;
 
+import bg.reshavalnik.app.security.domain.Role;
 import bg.reshavalnik.app.security.dto.projection.UserDetailProjection;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.springframework.security.core.GrantedAuthority;
@@ -28,16 +28,15 @@ public class UserDetails implements org.springframework.security.core.userdetail
     Collection<? extends GrantedAuthority> authorities;
 
     public static UserDetails build(UserDetailProjection user) {
-        List<GrantedAuthority> authorities =
-                user.getRoles().stream()
-                        .map(role -> new SimpleGrantedAuthority(role.getAuthority()))
-                        .collect(Collectors.toList());
+        Role r = user.getRoles();
+        String springAuthority = "ROLE_" + r.name();
+        GrantedAuthority ga = new SimpleGrantedAuthority(springAuthority);
 
         return UserDetails.builder()
                 .id(user.getId())
                 .username(user.getUsername())
                 .password(user.getPassword())
-                .authorities(authorities)
+                .authorities(List.of(ga))
                 .build();
     }
 

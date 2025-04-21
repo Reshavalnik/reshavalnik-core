@@ -20,22 +20,23 @@ public class UserDetailsTest {
 
     @Test
     void build_ShouldMapAllFieldsCorrectly() {
+        // arrange
         when(projection.getId()).thenReturn("id123");
         when(projection.getUsername()).thenReturn("user1");
         when(projection.getPassword()).thenReturn("secret");
-        Set<Role> roles = Set.of(Role.USER, Role.ADMIN);
-        when(projection.getRoles()).thenReturn(roles);
+        when(projection.getRoles()).thenReturn(Role.USER);
 
+        // act
         UserDetails userDetails = UserDetails.build(projection);
 
+        // assert basic fields
         assertEquals("id123", userDetails.getId());
         assertEquals("user1", userDetails.getUsername());
         assertEquals("secret", userDetails.getPassword());
 
+        // assert authorities: Spring's hasRole("USER") търси GrantedAuthority "ROLE_USER"
         Set<GrantedAuthority> expectedAuth =
-                Set.of(
-                        new SimpleGrantedAuthority(Role.USER.getAuthority()),
-                        new SimpleGrantedAuthority(Role.ADMIN.getAuthority()));
+                Set.of(new SimpleGrantedAuthority("ROLE_" + Role.USER.name()));
         assertEquals(expectedAuth, Set.copyOf(userDetails.getAuthorities()));
     }
 
@@ -44,7 +45,7 @@ public class UserDetailsTest {
         when(projection.getId()).thenReturn("idX");
         when(projection.getUsername()).thenReturn("john");
         when(projection.getPassword()).thenReturn("pass123");
-        when(projection.getRoles()).thenReturn(Set.of());
+        when(projection.getRoles()).thenReturn(Role.USER);
         UserDetails details = UserDetails.build(projection);
 
         String str = details.toString();
@@ -58,13 +59,13 @@ public class UserDetailsTest {
         when(projection.getId()).thenReturn("sameId");
         when(projection.getUsername()).thenReturn("u1");
         when(projection.getPassword()).thenReturn("pwd");
-        when(projection.getRoles()).thenReturn(Set.of());
+        when(projection.getRoles()).thenReturn(Role.USER);
 
         var p2 = org.mockito.Mockito.mock(UserDetailProjection.class);
         when(p2.getId()).thenReturn("sameId");
         when(p2.getUsername()).thenReturn("u2");
         when(p2.getPassword()).thenReturn("pwd2");
-        when(p2.getRoles()).thenReturn(Set.of());
+        when(p2.getRoles()).thenReturn(Role.USER);
 
         UserDetails d1 = UserDetails.build(projection);
         UserDetails d2 = UserDetails.build(p2);
@@ -84,7 +85,7 @@ public class UserDetailsTest {
         when(projection.getId()).thenReturn("i");
         when(projection.getUsername()).thenReturn("user");
         when(projection.getPassword()).thenReturn("pwd");
-        when(projection.getRoles()).thenReturn(Set.of());
+        when(projection.getRoles()).thenReturn(Role.USER);
         UserDetails d = UserDetails.build(projection);
 
         assertTrue(d.isAccountNonExpired());
