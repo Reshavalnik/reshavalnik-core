@@ -7,7 +7,6 @@ import bg.reshavalnik.app.repository.UserRepository;
 import bg.reshavalnik.app.security.domain.Role;
 import bg.reshavalnik.app.security.dto.projection.UserDetailProjection;
 import java.util.Optional;
-import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -31,20 +30,21 @@ public class UserDetailsServiceTest {
         when(projection.getId()).thenReturn("id123");
         when(projection.getUsername()).thenReturn(username);
         when(projection.getPassword()).thenReturn("secret");
-        Set<Role> roles = Set.of(Role.USER, Role.ADMIN);
+        Role roles = Role.USER;
         when(projection.getRoles()).thenReturn(roles);
 
         var details = service.loadUserByUsername(username);
 
         assertNotNull(details);
         assertEquals(username, details.getUsername());
-        assertEquals(2, details.getAuthorities().size());
+        assertEquals(1, details.getAuthorities().size());
         assertTrue(
                 details.getAuthorities().stream()
-                        .anyMatch(a -> a.getAuthority().equals(Role.USER.getAuthority())));
-        assertTrue(
-                details.getAuthorities().stream()
-                        .anyMatch(a -> a.getAuthority().equals(Role.ADMIN.getAuthority())));
+                        .anyMatch(a -> a.getAuthority().equals("ROLE_" + Role.USER.name())));
+        //        assertTrue(
+        //                details.getAuthorities().stream()
+        //                        .anyMatch(a -> a.getAuthority().equals("ROLE_" +
+        // Role.ADMIN.name())));
 
         assertTrue(details instanceof UserDetails);
         UserDetails ud = (UserDetails) details;
