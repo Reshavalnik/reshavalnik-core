@@ -3,9 +3,9 @@ package bg.reshavalnik.app.security.domain;
 import org.springframework.security.core.GrantedAuthority;
 
 public enum Role implements GrantedAuthority {
-    ROLE_ADMIN,
+    ADMIN,
 
-    ROLE_USER;
+    USER;
 
     @Override
     public String getAuthority() {
