@@ -69,7 +69,7 @@ public class SecurityService {
         String rawPassword = signUpRequest.getPassword();
         signUpRequest.setPassword(encoder.encode(rawPassword));
         User user = userMapper.mapToUser(signUpRequest);
-        user.setRoles(Role.ROLE_USER);
+        user.setRoles(Role.USER);
         userRepository.save(user);
 
         Authentication authentication =
