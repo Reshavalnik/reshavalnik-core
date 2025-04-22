@@ -6,7 +6,6 @@ import bg.reshavalnik.app.service.security.SecurityService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -20,7 +19,6 @@ public class AuthController {
     private final SecurityService securityService;
 
     @PostMapping("/signin")
-    @Transactional(readOnly = true)
     public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
         return ResponseEntity.ok(securityService.getAuthenticateUser(loginRequest));
     }

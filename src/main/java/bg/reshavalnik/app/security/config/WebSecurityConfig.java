@@ -63,11 +63,7 @@ public class WebSecurityConfig {
                                         .permitAll()
                                         .requestMatchers("/swagger-ui.html")
                                         .permitAll()
-                                        .requestMatchers("/api/stripe/webhook")
-                                        .permitAll()
                                         .requestMatchers("/actuator/health", "/actuator/health/**")
-                                        .permitAll()
-                                        .requestMatchers("/api/stripe/**")
                                         .permitAll()
                                         .anyRequest()
                                         .authenticated());
@@ -104,7 +100,8 @@ public class WebSecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(allowedOrigins);
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedMethods(
+                List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
         configuration.setExposedHeaders(List.of("Authorization"));
         configuration.setAllowCredentials(true);
