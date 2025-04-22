@@ -5,6 +5,7 @@ import bg.reshavalnik.app.security.dto.request.SignupRequest;
 import bg.reshavalnik.app.service.security.SecurityService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -20,11 +21,19 @@ public class AuthController {
 
     @PostMapping("/signin")
     public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
-        return ResponseEntity.ok(securityService.getAuthenticateUser(loginRequest));
+        return ResponseEntity.ok()
+                .header(
+                        HttpHeaders.SET_COOKIE,
+                        securityService.getAuthenticateUser(loginRequest).toString())
+                .build();
     }
 
     @PostMapping("/signup")
     public ResponseEntity<?> registerUser(@Valid @RequestBody SignupRequest signUpRequest) {
-        return ResponseEntity.ok(securityService.saveRegisterUser(signUpRequest));
+        return ResponseEntity.ok()
+                .header(
+                        HttpHeaders.SET_COOKIE,
+                        securityService.saveRegisterUser(signUpRequest).toString())
+                .build();
     }
 }
