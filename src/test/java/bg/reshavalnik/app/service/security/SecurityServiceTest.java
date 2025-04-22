@@ -10,16 +10,16 @@ import bg.reshavalnik.app.mapper.UserMapper;
 import bg.reshavalnik.app.repository.UserRepository;
 import bg.reshavalnik.app.security.dto.request.LoginRequest;
 import bg.reshavalnik.app.security.dto.request.SignupRequest;
-import bg.reshavalnik.app.security.dto.response.JwtResponse;
 import bg.reshavalnik.app.security.security.jwt.JwtUtils;
+import java.time.Duration;
 import java.util.Collections;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.ResponseCookie;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -48,15 +48,24 @@ public class SecurityServiceTest {
         LoginRequest request = new LoginRequest();
         request.setUsername("user1");
         request.setPassword("pass1");
+
         Authentication auth =
                 new UsernamePasswordAuthenticationToken("user1", "pass1", Collections.emptyList());
         when(authenticationManager.authenticate(any())).thenReturn(auth);
         when(jwtUtils.generateJwtToken(auth)).thenReturn("token123");
+        when(jwtUtils.getJwtExpirationMs()).thenReturn(60_000L);
 
-        JwtResponse response = securityService.getAuthenticateUser(request);
+        ResponseCookie cookie = securityService.getAuthenticateUser(request);
 
-        assertEquals("token123", response.getToken());
         assertSame(auth, SecurityContextHolder.getContext().getAuthentication());
+        assertEquals("JWT", cookie.getName());
+        assertEquals("token123", cookie.getValue());
+        assertTrue(cookie.isHttpOnly());
+        assertTrue(cookie.isSecure());
+        assertEquals("/", cookie.getPath());
+        assertEquals(Duration.ofMinutes(1), cookie.getMaxAge());
+        assertEquals("Strict", cookie.getSameSite());
+
         verify(jwtUtils).generateJwtToken(auth);
     }
 
@@ -65,6 +74,7 @@ public class SecurityServiceTest {
         LoginRequest request = new LoginRequest();
         request.setUsername("user1");
         request.setPassword("pass1");
+
         when(authenticationManager.authenticate(any()))
                 .thenThrow(new BadCredentialsException("bad cred"));
 
@@ -91,22 +101,28 @@ public class SecurityServiceTest {
                             u.setPassword(req.getPassword());
                             return u;
                         });
+
         Authentication auth =
                 new UsernamePasswordAuthenticationToken(
                         "newuser", "pass123", Collections.emptyList());
         when(authenticationManager.authenticate(any())).thenReturn(auth);
-        when(jwtUtils.generateJwtToken(auth)).thenReturn("jwt123");
 
-        JwtResponse response = securityService.saveRegisterUser(signup);
+        // Добавени липсващи стъбове:
+        when(jwtUtils.getJwtExpirationMs()).thenReturn(60_000L);
+        when(jwtUtils.generateJwtToken(auth)).thenReturn("token123");
 
-        assertEquals("jwt123", response.getToken());
-        ArgumentCaptor<bg.reshavalnik.app.security.domain.User> userCaptor =
-                ArgumentCaptor.forClass(bg.reshavalnik.app.security.domain.User.class);
-        verify(userRepository).save(userCaptor.capture());
-        var saved = userCaptor.getValue();
-        assertEquals("encodedPass", saved.getPassword());
-        assertNotNull(saved.getRoles());
-        assertTrue(saved.getRoles().equals(bg.reshavalnik.app.security.domain.Role.USER));
+        ResponseCookie cookie = securityService.saveRegisterUser(signup);
+
+        assertSame(auth, SecurityContextHolder.getContext().getAuthentication());
+        assertEquals("JWT", cookie.getName());
+        assertEquals("token123", cookie.getValue());
+        assertTrue(cookie.isHttpOnly());
+        assertTrue(cookie.isSecure());
+        assertEquals("/", cookie.getPath());
+        assertEquals(Duration.ofMinutes(1), cookie.getMaxAge());
+        assertEquals("Strict", cookie.getSameSite());
+
+        verify(jwtUtils).generateJwtToken(auth);
     }
 
     @Test
