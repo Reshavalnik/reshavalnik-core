@@ -55,16 +55,7 @@ public class SecurityService {
         String token = jwtUtils.generateJwtToken(authentication);
         log.info("User {} authenticated successfully", loginRequest.getUsername());
 
-        ResponseCookie cookie =
-                ResponseCookie.from("JWT", token)
-                        .httpOnly(true)
-                        .secure(true)
-                        .path("/")
-                        .maxAge(jwtUtils.getJwtExpirationMs() / 1000)
-                        .sameSite("Strict")
-                        .build();
-
-        return cookie;
+        return buildJwt(token);
     }
 
     @Transactional
@@ -86,16 +77,18 @@ public class SecurityService {
                                 signUpRequest.getUsername(), rawPassword));
         SecurityContextHolder.getContext().setAuthentication(authentication);
         String token = jwtUtils.generateJwtToken(authentication);
+        log.info("User {} registered successfully", signUpRequest.getUsername());
 
-        ResponseCookie cookie =
-                ResponseCookie.from("JWT", token)
-                        .httpOnly(true)
-                        .secure(true)
-                        .path("/")
-                        .maxAge(jwtUtils.getJwtExpirationMs() / 1000)
-                        .sameSite("Strict")
-                        .build();
+        return buildJwt(token);
+    }
 
-        return cookie;
+    private ResponseCookie buildJwt(String token) {
+        return ResponseCookie.from("JWT", token)
+                .httpOnly(true)
+                .secure(true)
+                .path("/")
+                .maxAge(jwtUtils.getJwtExpirationMs() / 1000)
+                .sameSite("Strict")
+                .build();
     }
 }
