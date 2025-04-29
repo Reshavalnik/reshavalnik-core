@@ -107,7 +107,6 @@ public class SecurityServiceTest {
                         "newuser", "pass123", Collections.emptyList());
         when(authenticationManager.authenticate(any())).thenReturn(auth);
 
-        // Добавени липсващи стъбове:
         when(jwtUtils.getJwtExpirationMs()).thenReturn(60_000L);
         when(jwtUtils.generateJwtToken(auth)).thenReturn("token123");
 
