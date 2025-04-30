@@ -1,5 +1,6 @@
 package bg.reshavalnik.app.controller;
 
+import bg.reshavalnik.app.security.dto.request.ChangePasswordRequest;
 import bg.reshavalnik.app.security.dto.request.LoginRequest;
 import bg.reshavalnik.app.security.dto.request.SignupRequest;
 import bg.reshavalnik.app.service.security.SecurityService;
@@ -34,6 +35,13 @@ public class AuthController {
                 .header(
                         HttpHeaders.SET_COOKIE,
                         securityService.saveRegisterUser(signUpRequest).toString())
+                .build();
+    }
+
+    @PostMapping("/change-password")
+    public ResponseEntity<?> changePassword(@Valid @RequestBody ChangePasswordRequest req) { //
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, securityService.changePassword(req).toString())
                 .build();
     }
 }
