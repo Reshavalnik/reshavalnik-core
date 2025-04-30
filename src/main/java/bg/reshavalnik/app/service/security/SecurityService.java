@@ -6,9 +6,11 @@ import bg.reshavalnik.app.mapper.UserMapper;
 import bg.reshavalnik.app.repository.UserRepository;
 import bg.reshavalnik.app.security.domain.Role;
 import bg.reshavalnik.app.security.domain.User;
+import bg.reshavalnik.app.security.dto.request.ChangePasswordRequest;
 import bg.reshavalnik.app.security.dto.request.LoginRequest;
 import bg.reshavalnik.app.security.dto.request.SignupRequest;
 import bg.reshavalnik.app.security.security.jwt.JwtUtils;
+import bg.reshavalnik.app.security.security.services.UserDetails;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
@@ -19,6 +21,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -90,5 +93,41 @@ public class SecurityService {
                 .maxAge(jwtUtils.getJwtExpirationMs() / 1000)
                 .sameSite("Strict")
                 .build();
+    }
+
+    @Transactional
+    public ResponseCookie changePassword(ChangePasswordRequest req) {
+        if (req.getUsername().contains("admin")) {
+            throw new IllegalArgumentException(
+                    CANNOT_CHANGE_PASSWORD_FOR_ADMIN + req.getUsername());
+        }
+        if (!userRepository.existsByUsername(req.getUsername())) {
+            throw new IllegalArgumentException(WRONG_EMAIL_OR_PASSWORD);
+        }
+
+        Authentication authentication;
+        try {
+            authentication =
+                    authenticationManager.authenticate(
+                            new UsernamePasswordAuthenticationToken(
+                                    req.getUsername(), req.getCurrentPassword()));
+        } catch (Exception e) {
+            log.error(WRONG_OLD_PASSWORD + e.getMessage());
+            throw new IllegalArgumentException(WRONG_EMAIL_OR_PASSWORD);
+        }
+
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        User user =
+                userRepository
+                        .findByUsername(userDetails.getUsername())
+                        .orElseThrow(() -> new UsernameNotFoundException(USER_NOT_FOUND));
+        user.setPassword(encoder.encode(req.getNewPassword()));
+        userRepository.save(user);
+
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        String token = jwtUtils.generateJwtToken(authentication);
+        log.info("User {} changed password successfully", user.getUsername());
+
+        return buildJwt(token);
     }
 }
