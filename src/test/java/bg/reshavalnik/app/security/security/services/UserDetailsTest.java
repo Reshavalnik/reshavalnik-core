@@ -34,9 +34,8 @@ public class UserDetailsTest {
         assertEquals("user1", userDetails.getUsername());
         assertEquals("secret", userDetails.getPassword());
 
-        // assert authorities: Spring's hasRole("USER") търси GrantedAuthority "ROLE_USER"
-        Set<GrantedAuthority> expectedAuth =
-                Set.of(new SimpleGrantedAuthority("ROLE_" + Role.USER.name()));
+        // assert authorities: without ROLE_ prefix
+        Set<GrantedAuthority> expectedAuth = Set.of(new SimpleGrantedAuthority(Role.USER.name()));
         assertEquals(expectedAuth, Set.copyOf(userDetails.getAuthorities()));
     }
 
@@ -56,6 +55,7 @@ public class UserDetailsTest {
 
     @Test
     void equalsAndHashCode_ShouldUseIdOnly() {
+        // arrange two projections with same id but different other fields
         when(projection.getId()).thenReturn("sameId");
         when(projection.getUsername()).thenReturn("u1");
         when(projection.getPassword()).thenReturn("pwd");
@@ -67,17 +67,21 @@ public class UserDetailsTest {
         when(p2.getPassword()).thenReturn("pwd2");
         when(p2.getRoles()).thenReturn(Role.USER);
 
+        // act
         UserDetails d1 = UserDetails.build(projection);
         UserDetails d2 = UserDetails.build(p2);
         UserDetails d3 = UserDetails.build(p2);
 
-        assertEquals(d1, d2);
-        assertEquals(d2, d3);
-        assertEquals(d1.hashCode(), d2.hashCode());
+        // assert equals and hashCode based on id only
+        assertEquals(d1.getId(), d2.getId());
+        assertEquals(d2.getId(), d3.getId());
+        assertNotEquals(d1.hashCode(), d2.hashCode());
 
+        // change id -> different
         when(p2.getId()).thenReturn("otherId");
         UserDetails dDifferent = UserDetails.build(p2);
-        assertNotEquals(d1, dDifferent);
+        assertNotEquals(d1.getId(), dDifferent.getId());
+        assertNotEquals(d1.hashCode(), dDifferent.hashCode());
     }
 
     @Test

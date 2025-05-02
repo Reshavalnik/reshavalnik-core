@@ -2,7 +2,7 @@ package bg.reshavalnik.app.userMapper;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import bg.reshavalnik.app.mapper.UserMapper;
+import bg.reshavalnik.app.mapper.user.UserMapper;
 import bg.reshavalnik.app.security.domain.User;
 import bg.reshavalnik.app.security.dto.request.SignupRequest;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,12 +30,12 @@ class UserMapperTest {
 
         User user = userMapper.mapToUser(req);
 
-        assertNotNull(user, "Mapper трябва да върне различен от null обект User");
-        assertEquals(req.getUsername(), user.getUsername(), "username не съвпада");
-        assertEquals(req.getPassword(), user.getPassword(), "password не съвпада");
-        assertEquals(req.getPhone(), user.getPhone(), "phone не съвпада");
-        assertEquals(req.getNickname(), user.getNickname(), "nickname не съвпада");
-        assertEquals(req.getFirstName(), user.getFirstName(), "firstName не съвпада");
-        assertEquals(req.getLastName(), user.getLastName(), "lastName не съвпада");
+        assertNotNull(user, "Mapper must return a non-null User object");
+        assertEquals(req.getUsername(), user.getUsername(), "username does not match");
+        assertEquals(req.getPassword(), user.getPassword(), "password does not match");
+        assertEquals(req.getPhone(), user.getPhone(), "phone does not match");
+        assertEquals(req.getNickname(), user.getNickname(), "nickname does not match");
+        assertEquals(req.getFirstName(), user.getFirstName(), "firstName does not match");
+        assertEquals(req.getLastName(), user.getLastName(), "lastName does not match");
     }
 }
