@@ -6,10 +6,10 @@ import static org.mockito.Mockito.*;
 import bg.reshavalnik.app.security.security.services.UserDetailsService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -20,51 +20,53 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 
 @ExtendWith(MockitoExtension.class)
-public class AuthTokenFilterTest {
-
-    @Mock private JwtUtils jwtUtils;
-    @Mock private UserDetailsService userDetailsService;
-    @Mock private HttpServletRequest request;
-    @Mock private HttpServletResponse response;
-    @Mock private FilterChain filterChain;
+class AuthTokenFilterTest {
 
     @InjectMocks private AuthTokenFilter authTokenFilter;
+
+    @Mock private JwtUtils jwtUtils;
+
+    @Mock private UserDetailsService userDetailsService;
+
+    @Mock private HttpServletRequest request;
+
+    @Mock private HttpServletResponse response;
+
+    @Mock private FilterChain filterChain;
+
+    private static final String COOKIE_NAME = "JWT";
 
     @BeforeEach
     void setUp() {
         SecurityContextHolder.clearContext();
     }
 
-    @AfterEach
-    void tearDown() {
-        SecurityContextHolder.clearContext();
-    }
-
     @Test
-    void doFilterInternal_validToken_setsAuthentication() throws ServletException, IOException {
+    void doFilterInternal_withValidCookie_setsAuthentication()
+            throws ServletException, IOException {
         String token = "validToken";
-        String headerValue = "Bearer " + token;
-        when(request.getHeader("Authorization")).thenReturn(headerValue);
-        when(jwtUtils.validateJwtToken(token)).thenReturn(true);
-        String username = "user1";
-        when(jwtUtils.getUserNameFromJwtToken(token)).thenReturn(username);
+        Cookie jwtCookie = new Cookie(COOKIE_NAME, token);
+        when(request.getCookies()).thenReturn(new Cookie[] {jwtCookie});
 
+        when(jwtUtils.validateJwtToken(token)).thenReturn(true);
+        when(jwtUtils.getUserNameFromJwtToken(token)).thenReturn("user1");
         UserDetails userDetails =
-                org.springframework.security.core.userdetails.User.withUsername(username)
+                User.withUsername("user1")
                         .password("irrelevant")
                         .authorities(new SimpleGrantedAuthority("USER"))
                         .build();
-        when(userDetailsService.loadUserByUsername(username)).thenReturn(userDetails);
+        when(userDetailsService.loadUserByUsername("user1")).thenReturn(userDetails);
 
         authTokenFilter.doFilterInternal(request, response, filterChain);
 
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        assertNotNull(auth);
+        assertNotNull(auth, "Authentication трябва да е сетнато");
         assertTrue(auth instanceof UsernamePasswordAuthenticationToken);
-        assertEquals(username, auth.getName());
+        assertEquals("user1", auth.getName());
         assertEquals(1, auth.getAuthorities().size());
         assertEquals("USER", auth.getAuthorities().iterator().next().getAuthority());
 
@@ -72,25 +74,32 @@ public class AuthTokenFilterTest {
     }
 
     @Test
-    void doFilterInternal_noToken_doesNotSetAuthentication() throws ServletException, IOException {
-        when(request.getHeader("Authorization")).thenReturn(null);
-
-        authTokenFilter.doFilterInternal(request, response, filterChain);
-
-        assertNull(SecurityContextHolder.getContext().getAuthentication());
-        verify(filterChain).doFilter(request, response);
-    }
-
-    @Test
-    void doFilterInternal_invalidToken_doesNotSetAuthentication()
+    void doFilterInternal_withInvalidCookie_doesNotSetAuthentication()
             throws ServletException, IOException {
-        String token = "bad";
-        when(request.getHeader("Authorization")).thenReturn("Bearer " + token);
+
+        String token = "badToken";
+        Cookie jwtCookie = new Cookie(COOKIE_NAME, token);
+        when(request.getCookies()).thenReturn(new Cookie[] {jwtCookie});
         when(jwtUtils.validateJwtToken(token)).thenReturn(false);
 
         authTokenFilter.doFilterInternal(request, response, filterChain);
 
-        assertNull(SecurityContextHolder.getContext().getAuthentication());
+        assertNull(
+                SecurityContextHolder.getContext().getAuthentication(),
+                "Authentication не трябва да се сетва");
+        verify(filterChain).doFilter(request, response);
+    }
+
+    @Test
+    void doFilterInternal_withNoCookie_doesNotSetAuthentication()
+            throws ServletException, IOException {
+        when(request.getCookies()).thenReturn(null);
+
+        authTokenFilter.doFilterInternal(request, response, filterChain);
+
+        assertNull(
+                SecurityContextHolder.getContext().getAuthentication(),
+                "Authentication не трябва да се сетва");
         verify(filterChain).doFilter(request, response);
     }
 }

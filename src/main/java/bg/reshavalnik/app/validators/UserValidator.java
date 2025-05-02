@@ -1,6 +1,6 @@
 package bg.reshavalnik.app.validators;
 
-import bg.reshavalnik.app.repository.UserRepository;
+import bg.reshavalnik.app.repository.user.UserRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
