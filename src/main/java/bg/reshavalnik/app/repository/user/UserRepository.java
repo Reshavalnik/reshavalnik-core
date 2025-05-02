@@ -1,4 +1,4 @@
-package bg.reshavalnik.app.repository;
+package bg.reshavalnik.app.repository.user;
 
 import bg.reshavalnik.app.security.domain.User;
 import bg.reshavalnik.app.security.dto.projection.UserDetailProjection;

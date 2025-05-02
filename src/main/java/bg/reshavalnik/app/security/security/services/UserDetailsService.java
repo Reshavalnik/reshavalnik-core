@@ -1,6 +1,6 @@
 package bg.reshavalnik.app.security.security.services;
 
-import bg.reshavalnik.app.repository.UserRepository;
+import bg.reshavalnik.app.repository.user.UserRepository;
 import bg.reshavalnik.app.security.dto.projection.UserDetailProjection;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
