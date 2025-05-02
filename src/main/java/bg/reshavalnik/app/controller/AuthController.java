@@ -39,7 +39,7 @@ public class AuthController {
     }
 
     @PostMapping("/change-password")
-    public ResponseEntity<?> changePassword(@Valid @RequestBody ChangePasswordRequest req) { //
+    public ResponseEntity<?> changePassword(@Valid @RequestBody ChangePasswordRequest req) {
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, securityService.changePassword(req).toString())
                 .build();

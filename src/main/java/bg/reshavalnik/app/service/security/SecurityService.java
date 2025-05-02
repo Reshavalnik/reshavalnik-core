@@ -39,10 +39,6 @@ public class SecurityService {
 
     @Transactional(readOnly = true)
     public ResponseCookie getAuthenticateUser(@Valid LoginRequest loginRequest) {
-        if (loginRequest.getUsername().contains("admin")) {
-            throw new IllegalArgumentException(CANNOT_ENTER_AS_ADMIN + loginRequest.getUsername());
-        }
-
         Authentication authentication;
         try {
             authentication =
@@ -63,8 +59,7 @@ public class SecurityService {
 
     @Transactional
     public ResponseCookie saveRegisterUser(@Valid SignupRequest signUpRequest) {
-        if (userRepository.existsByUsername(signUpRequest.getUsername())
-                || signUpRequest.getUsername().contains("admin")) {
+        if (userRepository.existsByUsername(signUpRequest.getUsername())) {
             throw new IllegalArgumentException(USERNAME_IS_ALREADY_TAKEN);
         }
 
@@ -97,10 +92,6 @@ public class SecurityService {
 
     @Transactional
     public ResponseCookie changePassword(ChangePasswordRequest req) {
-        if (req.getUsername().contains("admin")) {
-            throw new IllegalArgumentException(
-                    CANNOT_CHANGE_PASSWORD_FOR_ADMIN + req.getUsername());
-        }
         if (!userRepository.existsByUsername(req.getUsername())) {
             throw new IllegalArgumentException(WRONG_EMAIL_OR_PASSWORD);
         }
