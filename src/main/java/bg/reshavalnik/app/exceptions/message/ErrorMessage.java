@@ -8,4 +8,7 @@ public class ErrorMessage {
     public static final String CANNOT_CHANGE_PASSWORD_FOR_ADMIN = "Cannot change password for: ";
     public static final String WRONG_OLD_PASSWORD = "Wrong old password!!!! : ";
     public static final String USER_NOT_FOUND = "User not found!";
+
+    //    Tasks
+    public static final String TASK_ALREADY_EXISTS = "Task with this name already exists!";
 }
