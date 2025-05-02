@@ -1,5 +1,6 @@
 package bg.reshavalnik.app.controller;
 
+import bg.reshavalnik.app.exceptions.exeption.TaskExceptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -13,6 +14,12 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<?> handleIllegalArgument(IllegalArgumentException e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+    }
+
+    @ExceptionHandler(TaskExceptions.class)
+    public ResponseEntity<?> handleTaskExceptions(TaskExceptions e) {
+        log.error("Task exception: {}", e.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
     }
 }
