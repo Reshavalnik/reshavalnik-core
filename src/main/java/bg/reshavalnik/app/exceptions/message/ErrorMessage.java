@@ -11,4 +11,5 @@ public class ErrorMessage {
 
     //    Tasks
     public static final String TASK_ALREADY_EXISTS = "Task with this name already exists!";
+    public static final String TASK_NOT_FOUND = "Task not found!";
 }

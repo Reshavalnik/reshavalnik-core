@@ -1,6 +1,7 @@
 package bg.reshavalnik.app.service.task;
 
 import static bg.reshavalnik.app.exceptions.message.ErrorMessage.TASK_ALREADY_EXISTS;
+import static bg.reshavalnik.app.exceptions.message.ErrorMessage.TASK_NOT_FOUND;
 
 import bg.reshavalnik.app.domain.entity.task.Task;
 import bg.reshavalnik.app.domain.enums.Grade;
@@ -43,10 +44,7 @@ public class TaskService {
 
     public TaskResponseModel updateTask(TaskUpdateRequestModel model, String id) {
         log.info("Updating task with id: {}", id);
-        Task task =
-                taskRepository
-                        .findById(model.getId())
-                        .orElseThrow(() -> new TaskExceptions("Task not found"));
+        Task task = findTaskById(model.getId());
         taskMapper.updateFromDto(model, task);
         if (!task.getUserId().equals(id)) {
             task.setUserId(id);
@@ -57,10 +55,7 @@ public class TaskService {
 
     public void deleteTask(String taskId, String id) {
         log.info("Deleting task with id: {}", id);
-        Task task =
-                taskRepository
-                        .findById(taskId)
-                        .orElseThrow(() -> new TaskExceptions("Task not found"));
+        Task task = findTaskById(taskId);
         if (!task.getUserId().equals(id)) {
             task.setUserId(id);
         }
@@ -70,29 +65,20 @@ public class TaskService {
 
     public Object getTaskById(String taskId) {
         log.info("Getting task with id: {}", taskId);
-        Task task =
-                taskRepository
-                        .findById(taskId)
-                        .orElseThrow(() -> new TaskExceptions("Task not found"));
+        Task task = findTaskById(taskId);
         return taskMapper.mapToTaskResponseModel(task);
     }
 
     public List<TaskResponseModel> getTasksByUser(String userId) {
         log.info("Getting tasks for user with id: {}", userId);
         // ToDo: do need check userId exists
-        List<Task> tasks =
-                taskRepository
-                        .findByUserId(userId)
-                        .orElseThrow(() -> new TaskExceptions("Task not found"));
+        List<Task> tasks = getAllTaskByUserId(userId);
         return taskMapper.mapToTaskResponseModelList(tasks);
     }
 
     public List<TaskResponseModel> getMyTasks(String id) {
         log.info("Getting tasks for user with id: {}", id);
-        List<Task> tasks =
-                taskRepository
-                        .findByUserId(id)
-                        .orElseThrow(() -> new TaskExceptions("Task not found"));
+        List<Task> tasks = getAllTaskByUserId(id);
         return taskMapper.mapToTaskResponseModelList(tasks);
     }
 
@@ -112,7 +98,19 @@ public class TaskService {
         List<Task> tasks =
                 taskRepository
                         .findByGrade(Grade.valueOf(String.valueOf(gradeEnum)))
-                        .orElseThrow(() -> new TaskExceptions("Task not found"));
+                        .orElseThrow(() -> new TaskExceptions(TASK_NOT_FOUND));
         return taskMapper.mapToTaskResponseModelList(tasks);
+    }
+
+    private List<Task> getAllTaskByUserId(String userId) {
+        return taskRepository
+                .findByUserId(userId)
+                .orElseThrow(() -> new TaskExceptions(TASK_NOT_FOUND));
+    }
+
+    private Task findTaskById(String modelId) {
+        return taskRepository
+                .findById(modelId)
+                .orElseThrow(() -> new TaskExceptions(TASK_NOT_FOUND));
     }
 }
