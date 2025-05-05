@@ -1,76 +1,85 @@
 package bg.reshavalnik.app.controller;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import bg.reshavalnik.app.controller.auth.AuthController;
 import bg.reshavalnik.app.security.dto.request.LoginRequest;
 import bg.reshavalnik.app.security.dto.request.SignupRequest;
-import bg.reshavalnik.app.security.dto.response.JwtResponse;
 import bg.reshavalnik.app.service.security.SecurityService;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseCookie;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+@ExtendWith(MockitoExtension.class)
 class AuthControllerTest {
 
     private MockMvc mockMvc;
-    private ObjectMapper objectMapper;
 
     @Mock private SecurityService securityService;
 
-    @InjectMocks private AuthController authController;
-
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
-        mockMvc = MockMvcBuilders.standaloneSetup(authController).build();
-        objectMapper = new ObjectMapper();
+        AuthController controller = new AuthController(securityService);
+        this.mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
     }
 
     @Test
-    void authenticateUser_ReturnsJwtResponse() throws Exception {
-        LoginRequest loginRequest = new LoginRequest();
-        loginRequest.setUsername("user@example.com");
-        loginRequest.setPassword("Password1!");
-        JwtResponse jwtResponse = new JwtResponse("dummyToken");
-        doReturn(jwtResponse).when(securityService).getAuthenticateUser(any(LoginRequest.class));
+    void authenticateUser_ShouldReturnOkAndSetCookie() throws Exception {
+        String requestJson = "{\"username\":\"user@example.com\",\"password\":\"Valid1!\"}";
+        ResponseCookie cookie = ResponseCookie.from("JWT", "token123").build();
+        when(securityService.getAuthenticateUser(any(LoginRequest.class))).thenReturn(cookie);
 
         mockMvc.perform(
                         post("/auth/signin")
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(loginRequest)))
+                                .content(requestJson))
                 .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.token").value("dummyToken"));
+                .andExpect(header().string(HttpHeaders.SET_COOKIE, cookie.toString()));
     }
 
     @Test
-    void registerUser_ReturnsJwtResponse() throws Exception {
-        SignupRequest signupRequest = new SignupRequest();
-        signupRequest.setUsername("newuser@example.com");
-        signupRequest.setPassword("Password1!");
-        signupRequest.setNickname("nick");
-        signupRequest.setFirstName("First");
-        signupRequest.setLastName("Last");
-        JwtResponse jwtResponse = new JwtResponse("signupToken");
-        doReturn(jwtResponse).when(securityService).saveRegisterUser(any(SignupRequest.class));
+    void authenticateUser_InvalidRequest_ShouldReturnBadRequest() throws Exception {
+        String badJson = "{\"username\":\"user@example.com\",\"password\":\"pwd\"}";
+        mockMvc.perform(
+                        post("/auth/signin")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(badJson))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void registerUser_ShouldReturnOkAndSetCookie() throws Exception {
+        String requestJson =
+                "{\"username\":\"newuser@example.com\",\"email\":\"user@example.com\",\"password\":\"Strong1!\"}";
+        ResponseCookie cookie = ResponseCookie.from("JWT", "signup-token").build();
+        when(securityService.saveRegisterUser(any(SignupRequest.class))).thenReturn(cookie);
 
         mockMvc.perform(
                         post("/auth/signup")
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(signupRequest)))
+                                .content(requestJson))
                 .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.token").value("signupToken"));
+                .andExpect(header().string(HttpHeaders.SET_COOKIE, cookie.toString()));
+    }
+
+    @Test
+    void registerUser_InvalidRequest_ShouldReturnBadRequest() throws Exception {
+        String badJson = "{\"username\":\"bad-email\",\"password\":\"pwd\"}";
+        mockMvc.perform(
+                        post("/auth/signup")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(badJson))
+                .andExpect(status().isBadRequest());
     }
 }

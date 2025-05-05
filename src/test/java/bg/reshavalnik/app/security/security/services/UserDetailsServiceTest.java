@@ -3,7 +3,7 @@ package bg.reshavalnik.app.security.security.services;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
 
-import bg.reshavalnik.app.repository.UserRepository;
+import bg.reshavalnik.app.repository.user.UserRepository;
 import bg.reshavalnik.app.security.domain.Role;
 import bg.reshavalnik.app.security.dto.projection.UserDetailProjection;
 import java.util.Optional;
@@ -40,11 +40,7 @@ public class UserDetailsServiceTest {
         assertEquals(1, details.getAuthorities().size());
         assertTrue(
                 details.getAuthorities().stream()
-                        .anyMatch(a -> a.getAuthority().equals("ROLE_" + Role.USER.name())));
-        //        assertTrue(
-        //                details.getAuthorities().stream()
-        //                        .anyMatch(a -> a.getAuthority().equals("ROLE_" +
-        // Role.ADMIN.name())));
+                        .anyMatch(a -> a.getAuthority().equals(Role.USER.name())));
 
         assertTrue(details instanceof UserDetails);
         UserDetails ud = (UserDetails) details;

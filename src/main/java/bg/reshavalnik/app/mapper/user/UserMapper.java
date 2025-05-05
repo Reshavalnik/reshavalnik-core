@@ -1,4 +1,4 @@
-package bg.reshavalnik.app.mapper;
+package bg.reshavalnik.app.mapper.user;
 
 import bg.reshavalnik.app.security.domain.User;
 import bg.reshavalnik.app.security.dto.request.SignupRequest;

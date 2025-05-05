@@ -1,4 +1,4 @@
-package bg.reshavalnik.app.controller;
+package bg.reshavalnik.app.controller.auth;
 
 import bg.reshavalnik.app.security.dto.request.ChangePasswordRequest;
 import bg.reshavalnik.app.security.dto.request.LoginRequest;

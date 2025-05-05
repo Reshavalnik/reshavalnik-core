@@ -6,8 +6,8 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-import bg.reshavalnik.app.mapper.UserMapper;
-import bg.reshavalnik.app.repository.UserRepository;
+import bg.reshavalnik.app.mapper.user.UserMapper;
+import bg.reshavalnik.app.repository.user.UserRepository;
 import bg.reshavalnik.app.security.dto.request.LoginRequest;
 import bg.reshavalnik.app.security.dto.request.SignupRequest;
 import bg.reshavalnik.app.security.security.jwt.JwtUtils;

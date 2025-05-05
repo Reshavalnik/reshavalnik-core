@@ -2,8 +2,8 @@ package bg.reshavalnik.app.service.security;
 
 import static bg.reshavalnik.app.exceptions.message.ErrorMessage.*;
 
-import bg.reshavalnik.app.mapper.UserMapper;
-import bg.reshavalnik.app.repository.UserRepository;
+import bg.reshavalnik.app.mapper.user.UserMapper;
+import bg.reshavalnik.app.repository.user.UserRepository;
 import bg.reshavalnik.app.security.domain.Role;
 import bg.reshavalnik.app.security.domain.User;
 import bg.reshavalnik.app.security.dto.request.ChangePasswordRequest;
