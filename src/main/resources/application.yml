@@ -22,3 +22,7 @@ jwt:
   secret:
     key: reshavalnikreshavalnikreshavalnikreshavalnikreshavalnikreshavalnikreshavalnikreshavalnikreshavalnikreshavalnik
     jwtExpirationMs: 155520000000
+
+temp:
+  file:
+    path: ./app/temp-cache

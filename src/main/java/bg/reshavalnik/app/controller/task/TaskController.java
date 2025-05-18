@@ -3,13 +3,16 @@ package bg.reshavalnik.app.controller.task;
 import bg.reshavalnik.app.domain.model.task.TaskRequestModel;
 import bg.reshavalnik.app.domain.model.task.TaskUpdateRequestModel;
 import bg.reshavalnik.app.security.security.services.UserDetails;
+import bg.reshavalnik.app.service.script.ScriptService;
 import bg.reshavalnik.app.service.task.TaskService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RequestMapping("/api/task")
 @AllArgsConstructor
@@ -17,6 +20,8 @@ import org.springframework.web.bind.annotation.*;
 public class TaskController {
 
     private final TaskService taskService;
+
+    private final ScriptService svc;
 
     @PostMapping("/create")
     public ResponseEntity<?> createTask(
@@ -67,5 +72,18 @@ public class TaskController {
     @GetMapping("/get-all-by-grade")
     public ResponseEntity<?> getAllTasksByGrade(@RequestParam("grade") String grade) {
         return new ResponseEntity<>(taskService.getAllTasksByGrade(grade), HttpStatus.OK);
+    }
+
+    @PostMapping(path = "/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<String> generate(@RequestParam("file") MultipartFile file)
+            throws Exception {
+        String id = svc.createTask(file);
+        return ResponseEntity.ok(id);
+    }
+
+    @PostMapping("/generate")
+    public ResponseEntity<String> generate(@RequestParam("id") String id) throws Exception {
+        String result = svc.generate(id);
+        return ResponseEntity.ok(result);
     }
 }
