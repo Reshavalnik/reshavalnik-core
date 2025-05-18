@@ -12,4 +12,8 @@ public class ErrorMessage {
     //    Tasks
     public static final String TASK_ALREADY_EXISTS = "Task with this name already exists!";
     public static final String TASK_NOT_FOUND = "Task not found!";
+    public static final String FILE_NOT_FOUND = "File not found: ";
+    public static final String ERROR_WRITING_TEMPORARY_FILE = "Error writing temporary file: ";
+    public static final String ERROR_READING_PROCESS_OUTPUT = "Error reading process output: ";
+    public static final String PROCESS_WAS_INTERRUPTED = "Process was interrupted: ";
 }
