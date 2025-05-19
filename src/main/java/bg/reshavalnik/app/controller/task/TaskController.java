@@ -74,8 +74,8 @@ public class TaskController {
         return new ResponseEntity<>(taskService.getAllTasksByGrade(grade), HttpStatus.OK);
     }
 
-    @PostMapping(path = "/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<String> generate(@RequestParam("file") MultipartFile file)
+    @PostMapping(path = "/create-task", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<String> createTask(@RequestParam("file") MultipartFile file)
             throws Exception {
         String id = svc.createTask(file);
         return ResponseEntity.ok(id);
