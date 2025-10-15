@@ -10,7 +10,6 @@ import java.nio.file.Path;
 import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -30,8 +29,9 @@ public class ScriptService {
 
     private final String tempFilePath;
 
-    @Autowired
-    public ScriptService(GridFsTemplate gridFs, @Value("${temp.file.path}") String tempFilePath) {
+    public ScriptService(
+            GridFsTemplate gridFs,
+            @Value("${temp.file.path:${java.io.tmpdir}}") String tempFilePath) {
         this.gridFs = gridFs;
         this.tempFilePath = tempFilePath;
     }
@@ -42,6 +42,12 @@ public class ScriptService {
         return gridFs.store(
                         file.getInputStream(), file.getOriginalFilename(), file.getContentType())
                 .toString();
+    }
+
+    /** Writes and remove old Python file to GridFS and returns the generated ID. */
+    public String update(MultipartFile file, String fileId) throws IOException {
+        gridFs.delete(new Query(Criteria.where("_id").is(fileId)));
+        return createTask(file);
     }
 
     /** Runs a script by ID and returns stdout+stderr. */

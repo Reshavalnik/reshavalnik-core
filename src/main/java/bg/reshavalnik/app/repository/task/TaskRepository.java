@@ -13,7 +13,7 @@ public interface TaskRepository extends MongoRepository<Task, String> {
 
     Optional<Task> findByTaskName(String taskName);
 
-    Optional<List<Task>> findByUserId(String userId);
+    Optional<List<Task>> findByOwnerId(String userId);
 
     Optional<List<Task>> findByGrade(@NonNull Grade grade);
 }
