@@ -2,7 +2,6 @@ package bg.reshavalnik.app.domain.entity.task;
 
 import bg.reshavalnik.app.domain.enums.Grade;
 import java.time.LocalDateTime;
-import java.util.List;
 import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -16,27 +15,21 @@ import org.springframework.data.mongodb.core.mapping.Document;
 public class Task {
     @Id private String id;
 
-    @NonNull private String userId;
+    @NonNull private String ownerId;
 
     @NonNull private Grade grade;
 
     @NonNull private String taskName;
 
-    @NonNull private String description;
-
     @NonNull private String algorithm;
 
-    @NonNull private List<Character> possibleOptions;
-
-    private String additionalInfo;
-
-    private String example;
+    @NonNull private String textbookSection;
 
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
 
-    private String filename;
+    private String fileId;
 
     private byte[] img;
 }

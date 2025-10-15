@@ -20,10 +20,10 @@ import org.springframework.stereotype.Component;
 public class JwtUtils {
     private static final Logger logger = LoggerFactory.getLogger(JwtUtils.class);
 
-    @Value("${jwt.secret.key}")
+    @Value("${jwt.secret.key:ZmFrZV9qd3Rfc2VjcmV0XzMyYnl0ZXNfYmFzZTY0}")
     private String jwtSecret;
 
-    @Value("${jwt.secret.jwtExpirationMs}")
+    @Value("${jwt.secret.jwtExpirationMs:3600000}")
     private long jwtExpirationMs;
 
     public String generateJwtToken(Authentication authentication) {

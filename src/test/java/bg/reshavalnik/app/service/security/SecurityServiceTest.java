@@ -144,6 +144,8 @@ public class SecurityServiceTest {
         signup.setUsername("adminUser");
         signup.setPassword("pass");
 
+        when(userRepository.existsByUsername("adminUser")).thenReturn(true);
+
         IllegalArgumentException ex =
                 assertThrows(
                         IllegalArgumentException.class,

@@ -5,7 +5,8 @@ import bg.reshavalnik.app.domain.model.task.TaskUpdateRequestModel;
 import bg.reshavalnik.app.security.security.services.UserDetails;
 import bg.reshavalnik.app.service.script.ScriptService;
 import bg.reshavalnik.app.service.task.TaskService;
-import jakarta.validation.Valid;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -23,22 +24,36 @@ public class TaskController {
 
     private final ScriptService svc;
 
-    @PostMapping("/create")
-    public ResponseEntity<?> createTask(
-            @Valid @RequestBody TaskRequestModel model,
-            @AuthenticationPrincipal UserDetails userDetails) {
+    private final ObjectMapper objectMapper;
 
+    @PostMapping(
+            path = "/create",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> createTask(
+            @RequestPart("model") String modelJson,
+            @RequestParam("file") MultipartFile file,
+            @AuthenticationPrincipal UserDetails userDetails)
+            throws IOException {
+
+        TaskRequestModel model = objectMapper.readValue(modelJson, TaskRequestModel.class);
         return new ResponseEntity<>(
-                taskService.createTask(model, userDetails.getId()), HttpStatus.CREATED);
+                taskService.createTask(model, userDetails.getId(), file), HttpStatus.CREATED);
     }
 
-    @PostMapping("/update")
+    @PostMapping(
+            path = "/update",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> updateTask(
-            @RequestBody TaskUpdateRequestModel model,
-            @AuthenticationPrincipal UserDetails userDetails) {
-
+            @RequestPart("model") String modelJson,
+            @RequestParam("file") MultipartFile file,
+            @AuthenticationPrincipal UserDetails userDetails)
+            throws IOException {
+        TaskUpdateRequestModel model =
+                objectMapper.readValue(modelJson, TaskUpdateRequestModel.class);
         return new ResponseEntity<>(
-                taskService.updateTask(model, userDetails.getId()), HttpStatus.OK);
+                taskService.updateTask(model, userDetails.getId(), file), HttpStatus.OK);
     }
 
     @GetMapping("/delete")
@@ -82,8 +97,9 @@ public class TaskController {
     }
 
     @PostMapping("/generate")
-    public ResponseEntity<String> generate(@RequestParam("id") String id) throws Exception {
-        String result = svc.generate(id);
-        return ResponseEntity.ok(result);
+    public ResponseEntity<?> generateTask(
+            @RequestParam("taskId") String taskId, @RequestParam("count") Integer count)
+            throws Exception {
+        return ResponseEntity.ok(taskService.generateTaskWithCount(taskId, count));
     }
 }
