@@ -19,16 +19,14 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 @RequiredArgsConstructor
 @Service
+@Slf4j
 public class TaskService {
-
-    private static final Logger log = LoggerFactory.getLogger(TaskService.class);
 
     private final TaskRepository taskRepository;
 
@@ -120,15 +118,16 @@ public class TaskService {
         return taskMapper.mapToTaskResponseModelList(tasks);
     }
 
-    public GeneratedResponseTask generateTaskWithCount(String taskId, Integer count) {
+    public GeneratedResponseTask generateTaskWithCount(String taskId, int count) {
         try {
             TaskResponseModel taskResponseModel = getTaskById(taskId);
             GeneratedResponseTask response =
                     taskMapper.mapToGeneratedResponseTask(taskResponseModel);
             List<GeneratedTask> generatedTasks = new java.util.ArrayList<>();
-            for (int i = 1; i <= count; i++) {
-                String generatedResultTask = scriptService.generate(taskResponseModel.getFileId());
-                generatedTasks.add(mapGeneratedTaskToTask(generatedResultTask));
+            List<String> generatedResultTask =
+                    scriptService.generate(taskResponseModel.getFileId(), count);
+            for (String s : generatedResultTask) {
+                generatedTasks.add(mapGeneratedTaskToTask(s));
             }
             response.setTasks(generatedTasks);
             return response;

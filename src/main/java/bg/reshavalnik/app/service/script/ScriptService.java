@@ -7,9 +7,9 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import lombok.Getter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -21,9 +21,11 @@ import org.springframework.web.multipart.MultipartFile;
 
 @Getter
 @Service
+@Slf4j
 public class ScriptService {
 
-    private static final Logger log = LoggerFactory.getLogger(ScriptService.class);
+    @Value("${python.bin:python}")
+    private String pythonBin;
 
     private final GridFsTemplate gridFs;
 
@@ -51,33 +53,41 @@ public class ScriptService {
     }
 
     /** Runs a script by ID and returns stdout+stderr. */
-    public String generate(String id) throws IOException, InterruptedException {
-        log.info("Generate file with ID: {}", id);
-        // Retrieving from GridFS
+
+    /** 1) Downloads a file from GridFS ONCE and returns the Path to the temporary .py */
+    private Path prepareScript(String id) throws IOException {
         GridFSFile gridFile = gridFs.findOne(Query.query(Criteria.where("_id").is(id)));
         if (gridFile == null) {
             throw new FileNotFoundException(FILE_NOT_FOUND + id);
         }
         GridFsResource resource = gridFs.getResource(gridFile);
 
-        // We record temporarily to disk
         Path dir = Path.of(tempFilePath);
+        Files.createDirectories(dir);
+
         Path tempPath = Files.createTempFile(dir, "script-", ".py");
-        File temp = tempPath.toFile();
         try (InputStream in = resource.getInputStream();
-                OutputStream out = new FileOutputStream(temp)) {
+                OutputStream out = Files.newOutputStream(tempPath)) {
             StreamUtils.copy(in, out);
         } catch (IOException e) {
+            // if the save fails, delete the temp file
+            try {
+                Files.deleteIfExists(tempPath);
+            } catch (Exception ignore) {
+            }
             throw new IOException(ERROR_WRITING_TEMPORARY_FILE + e.getMessage(), e);
         }
+        return tempPath;
+    }
 
-        // We start python
-        ProcessBuilder pb = new ProcessBuilder("python", temp.getAbsolutePath());
+    /** 2) Runs a prepared Python script ONE time and returns stdout+stderr as a String */
+    private String runOnce(Path scriptPath) throws IOException, InterruptedException {
+        ProcessBuilder pb = new ProcessBuilder(pythonBin, scriptPath.toAbsolutePath().toString());
         pb.environment().put("PYTHONIOENCODING", "UTF-8");
         pb.redirectErrorStream(true);
+
         Process p = pb.start();
 
-        // read output
         StringBuilder output = new StringBuilder();
         try (BufferedReader reader =
                 new BufferedReader(
@@ -90,8 +100,7 @@ public class ScriptService {
             throw new IOException(ERROR_READING_PROCESS_OUTPUT + e.getMessage(), e);
         }
 
-        // wait for process to finish
-        int code = 0;
+        int code;
         try {
             code = p.waitFor();
         } catch (InterruptedException e) {
@@ -99,9 +108,27 @@ public class ScriptService {
             throw new InterruptedException(PROCESS_WAS_INTERRUPTED + e.getMessage());
         }
 
-        // remove temp file
-        temp.delete();
-
         return String.format("Exit code: %d%n%s", code, output);
+    }
+
+    /**
+     * 3) Public method: execute the script by ID N times (without reading GridFS multiple times).
+     */
+    public List<String> generate(String id, int count) throws IOException, InterruptedException {
+        if (count <= 0) return java.util.Collections.emptyList();
+
+        Path script = prepareScript(id);
+        try {
+            List<String> results = new java.util.ArrayList<>(count);
+            for (int i = 0; i < count; i++) {
+                results.add(runOnce(script));
+            }
+            return results;
+        } finally {
+            try {
+                Files.deleteIfExists(script);
+            } catch (Exception ignore) {
+            }
+        }
     }
 }

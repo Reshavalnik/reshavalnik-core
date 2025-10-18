@@ -6,18 +6,21 @@ import bg.reshavalnik.app.security.security.services.UserDetails;
 import bg.reshavalnik.app.service.script.ScriptService;
 import bg.reshavalnik.app.service.task.TaskService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.validation.constraints.Min;
 import java.io.IOException;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 @RequestMapping("/api/task")
 @AllArgsConstructor
 @RestController
+@Validated
 public class TaskController {
 
     private final TaskService taskService;
@@ -89,17 +92,17 @@ public class TaskController {
         return new ResponseEntity<>(taskService.getAllTasksByGrade(grade), HttpStatus.OK);
     }
 
-    @PostMapping(path = "/create-task", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<String> createTask(@RequestParam("file") MultipartFile file)
-            throws Exception {
-        String id = svc.createTask(file);
-        return ResponseEntity.ok(id);
-    }
+    //    @PostMapping(path = "/create-task", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    //    public ResponseEntity<String> createTask(@RequestParam("file") MultipartFile file)
+    //            throws Exception {
+    //        String id = svc.createTask(file);
+    //        return ResponseEntity.ok(id);
+    //    }
 
     @PostMapping("/generate")
     public ResponseEntity<?> generateTask(
-            @RequestParam("taskId") String taskId, @RequestParam("count") Integer count)
-            throws Exception {
+            @RequestParam("taskId") String taskId,
+            @RequestParam("count") @Min(value = 1, message = "cannot be les then 1") int count) {
         return ResponseEntity.ok(taskService.generateTaskWithCount(taskId, count));
     }
 

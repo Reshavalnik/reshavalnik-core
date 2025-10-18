@@ -13,8 +13,7 @@ import bg.reshavalnik.app.security.security.jwt.JwtUtils;
 import bg.reshavalnik.app.security.security.services.UserDetails;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseCookie;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -28,9 +27,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 @AllArgsConstructor
 @Service
+@Slf4j
 public class SecurityService {
-    private static final Logger log = LoggerFactory.getLogger(SecurityService.class);
-
     private final AuthenticationManager authenticationManager;
     private final JwtUtils jwtUtils;
     private final UserRepository userRepository;
