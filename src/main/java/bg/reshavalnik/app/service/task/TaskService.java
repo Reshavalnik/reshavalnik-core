@@ -1,13 +1,14 @@
 package bg.reshavalnik.app.service.task;
 
-import static bg.reshavalnik.app.exceptions.message.ErrorMessage.TASK_ALREADY_EXISTS;
-import static bg.reshavalnik.app.exceptions.message.ErrorMessage.TASK_NOT_FOUND;
+import static bg.reshavalnik.app.exceptions.message.ErrorMessage.*;
 
+import bg.reshavalnik.app.domain.entity.task.Section;
 import bg.reshavalnik.app.domain.entity.task.Task;
 import bg.reshavalnik.app.domain.enums.Grade;
 import bg.reshavalnik.app.domain.model.task.*;
 import bg.reshavalnik.app.exceptions.exeption.TaskExceptions;
 import bg.reshavalnik.app.mapper.task.TaskMapper;
+import bg.reshavalnik.app.repository.section.SectionRepository;
 import bg.reshavalnik.app.repository.task.TaskRepository;
 import bg.reshavalnik.app.service.script.ScriptService;
 import jakarta.validation.Valid;
@@ -16,6 +17,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,6 +35,8 @@ public class TaskService {
     private final ScriptService scriptService;
 
     private final TaskMapper taskMapper;
+
+    private final SectionRepository sectionRepository;
 
     public TaskResponseModel createTask(
             @Valid TaskRequestModel model, String userId, MultipartFile file) throws IOException {
@@ -199,6 +203,33 @@ public class TaskService {
         gt.setHint(hintText);
         gt.setSolution(solutionText);
         return gt;
+    }
+
+    public Section addSection(@NonNull String section) {
+        if (sectionRepository.existsBySection(section)) {
+            throw new TaskExceptions(SECTION_ALREADY_EXISTS);
+        }
+        Section newSection = new Section();
+        newSection.setSection(section);
+        return sectionRepository.save(newSection);
+    }
+
+    public Section getSection(@NonNull String sectionId) {
+        return sectionRepository
+                .findById(sectionId)
+                .orElseThrow(() -> new TaskExceptions(SECTION_NOT_FOUND));
+    }
+
+    public List<Section> getAllSections() {
+        return sectionRepository.findAll();
+    }
+
+    public void deleteSection(String sectionId) {
+        Section section =
+                sectionRepository
+                        .findById(sectionId)
+                        .orElseThrow(() -> new TaskExceptions(SECTION_NOT_FOUND));
+        sectionRepository.delete(section);
     }
 
     private static int findFirst(Pattern p, String s) {

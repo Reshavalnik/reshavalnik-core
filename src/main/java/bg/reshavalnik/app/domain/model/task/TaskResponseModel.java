@@ -1,8 +1,10 @@
 package bg.reshavalnik.app.domain.model.task;
 
+import bg.reshavalnik.app.domain.entity.task.Section;
 import bg.reshavalnik.app.domain.enums.Grade;
 import java.time.LocalDateTime;
 import lombok.*;
+import org.springframework.data.annotation.Id;
 
 @Data
 @NoArgsConstructor
@@ -10,7 +12,7 @@ import lombok.*;
 @ToString
 public class TaskResponseModel {
 
-    private String id;
+    @Id private String id;
 
     private String ownerId;
 
@@ -20,7 +22,7 @@ public class TaskResponseModel {
 
     private String algorithm;
 
-    private String textbookSection;
+    private Section section;
 
     private LocalDateTime createdAt;
 
