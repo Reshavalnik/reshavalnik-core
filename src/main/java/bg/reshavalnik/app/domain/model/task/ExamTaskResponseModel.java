@@ -8,9 +8,9 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class GeneratedResponseTask {
+public class ExamTaskResponseModel {
     private Grade grade;
     private String taskName;
     private Section section;
-    private List<GeneratedTask> tasks;
+    private List<ExamTaskDto> tasks;
 }

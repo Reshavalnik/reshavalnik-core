@@ -1,12 +1,12 @@
 package bg.reshavalnik.app.controller.task;
 
+import bg.reshavalnik.app.domain.model.task.GeneratedTaskRequestModel;
 import bg.reshavalnik.app.domain.model.task.TaskRequestModel;
 import bg.reshavalnik.app.domain.model.task.TaskUpdateRequestModel;
 import bg.reshavalnik.app.security.security.services.UserDetails;
 import bg.reshavalnik.app.service.script.ScriptService;
 import bg.reshavalnik.app.service.task.TaskService;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.validation.constraints.Min;
 import java.io.IOException;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -44,7 +44,7 @@ public class TaskController {
                 taskService.createTask(model, userDetails.getId(), file), HttpStatus.CREATED);
     }
 
-    @PostMapping(
+    @PatchMapping(
             path = "/update",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
@@ -59,7 +59,7 @@ public class TaskController {
                 taskService.updateTask(model, userDetails.getId(), file), HttpStatus.OK);
     }
 
-    @GetMapping("/delete")
+    @DeleteMapping("/delete")
     public ResponseEntity<?> deleteTask(
             @RequestParam("task-id") String taskId,
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -101,9 +101,19 @@ public class TaskController {
 
     @PostMapping("/generate")
     public ResponseEntity<?> generateTask(
-            @RequestParam("taskId") String taskId,
-            @RequestParam("count") @Min(value = 1, message = "cannot be les then 1") int count) {
-        return ResponseEntity.ok(taskService.generateTaskWithCount(taskId, count));
+            @RequestBody GeneratedTaskRequestModel requestModel,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.ok(taskService.generateTaskWithCount(requestModel, userDetails));
+    }
+
+    @PostMapping("get-by-exist-exam-id")
+    public ResponseEntity<?> getByExamTaskExistId(@RequestParam("taskId") String taskId) {
+        return ResponseEntity.ok(taskService.getByExamExistTaskId(taskId));
+    }
+
+    @GetMapping("get-all-exist-exam")
+    public ResponseEntity<?> getAllExamExist(@AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.ok(taskService.getAllExamExist(userDetails.getId()));
     }
 
     @PostMapping("/add-section")

@@ -2,14 +2,19 @@ package bg.reshavalnik.app.service.task;
 
 import static bg.reshavalnik.app.exceptions.message.ErrorMessage.*;
 
+import bg.reshavalnik.app.domain.entity.task.ExamTask;
 import bg.reshavalnik.app.domain.entity.task.Section;
 import bg.reshavalnik.app.domain.entity.task.Task;
 import bg.reshavalnik.app.domain.enums.Grade;
+import bg.reshavalnik.app.domain.model.exam.ExamTaskExistResponseModel;
 import bg.reshavalnik.app.domain.model.task.*;
+import bg.reshavalnik.app.domain.model.task.GeneratedTask;
 import bg.reshavalnik.app.exceptions.exeption.TaskExceptions;
 import bg.reshavalnik.app.mapper.task.TaskMapper;
+import bg.reshavalnik.app.repository.ExamTaskRepository;
 import bg.reshavalnik.app.repository.section.SectionRepository;
 import bg.reshavalnik.app.repository.task.TaskRepository;
+import bg.reshavalnik.app.security.security.services.UserDetails;
 import bg.reshavalnik.app.service.script.ScriptService;
 import jakarta.validation.Valid;
 import java.io.IOException;
@@ -35,6 +40,8 @@ public class TaskService {
     private final TaskMapper taskMapper;
 
     private final SectionRepository sectionRepository;
+
+    private final ExamTaskRepository examTaskRepository;
 
     public TaskResponseModel createTask(
             @Valid TaskRequestModel model, String userId, MultipartFile file) throws IOException {
@@ -118,25 +125,44 @@ public class TaskService {
         return taskMapper.mapToTaskResponseModelList(tasks);
     }
 
-    public GeneratedResponseTask generateTaskWithCount(String taskId, int count) {
+    public ExamTaskResponseModel generateTaskWithCount(
+            GeneratedTaskRequestModel requestModel, UserDetails userDetails) {
         try {
-            TaskResponseModel taskResponseModel = getTaskById(taskId);
-            GeneratedResponseTask response =
-                    taskMapper.mapToGeneratedResponseTask(taskResponseModel);
+            TaskResponseModel taskResponseModel = getTaskById(requestModel.getTaskId());
+            ExamTask examTask = taskMapper.mapExamTask(taskResponseModel);
+            examTask.setGeneratedByUserId(userDetails.getId());
+            LocalDateTime now = LocalDateTime.now();
+            examTask.setCreatedAt(now);
             List<GeneratedTask> generatedTasks = new java.util.ArrayList<>();
             List<String> generatedResultTask =
-                    scriptService.generate(taskResponseModel.getFileId(), count);
-            for (String s : generatedResultTask) {
-                generatedTasks.add(mapGeneratedTaskToTask(s));
+                    scriptService.generate(taskResponseModel.getFileId(), requestModel.getCount());
+            for (int i = 0; i < generatedResultTask.size(); i++) {
+                String userId =
+                        requestModel.getStudents().size() == generatedResultTask.size()
+                                ? requestModel.getStudents().get(i)
+                                : requestModel.getStudents().getFirst();
+                generatedTasks.add(
+                        mapGeneratedTaskToTask(
+                                generatedResultTask.get(i),
+                                userId,
+                                i,
+                                now.toString(),
+                                examTask.getGeneratedByUserId()));
             }
-            response.setTasks(generatedTasks);
-            return response;
+            examTask.setTasks(generatedTasks);
+
+            return taskMapper.mapToGeneratedTask(examTaskRepository.save(examTask));
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private GeneratedTask mapGeneratedTaskToTask(String generatedTask) {
+    private GeneratedTask mapGeneratedTaskToTask(
+            String generatedTask,
+            String userId,
+            int index,
+            String timestamp,
+            String generatedByUserId) {
 
         // 0) normalize + drop leading "Exit code: N"
         String cleaned =
@@ -201,7 +227,20 @@ public class TaskService {
         gt.setAnswer(answerLetter);
         gt.setHint(hintText);
         gt.setSolution(solutionText);
+        gt.setUserId(userId);
+        gt.setId(generateId(generatedByUserId, userId, timestamp, index));
         return gt;
+    }
+
+    private String generateId(
+            String generatedByUserId, String userId, String timestamp, int index) {
+        return generatedByUserId
+                .concat("_")
+                .concat(userId)
+                .concat("_")
+                .concat(timestamp)
+                .concat("_")
+                .concat(String.valueOf(index));
     }
 
     public Section addSection(@NonNull String section) {
@@ -251,5 +290,23 @@ public class TaskService {
         return taskRepository
                 .findById(modelId)
                 .orElseThrow(() -> new TaskExceptions(TASK_NOT_FOUND));
+    }
+
+    public ExamTaskExistResponseModel getByExamExistTaskId(String taskId) {
+        log.info("Getting exam task with id: {}", taskId);
+        ExamTask examTask =
+                examTaskRepository
+                        .findById(taskId)
+                        .orElseThrow(() -> new TaskExceptions(TASK_NOT_FOUND));
+        return taskMapper.mapToExamTaskExistResponseModel(examTask);
+    }
+
+    public List<ExamTaskExistResponseModel> getAllExamExist(String id) {
+        log.info("Getting all exam tasks for user with id: {}", id);
+        List<ExamTask> examTasks =
+                examTaskRepository
+                        .findAllByGeneratedByUserId(id)
+                        .orElseThrow(() -> new TaskExceptions(TASK_NOT_FOUND));
+        return taskMapper.mapToExamExistResponseModelList(examTasks);
     }
 }
