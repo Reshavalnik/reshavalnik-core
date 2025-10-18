@@ -8,6 +8,10 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -118,13 +122,33 @@ public class ScriptService {
         if (count <= 0) return java.util.Collections.emptyList();
 
         Path script = prepareScript(id);
+        int parallelism = Math.min(count, Runtime.getRuntime().availableProcessors());
+        ExecutorService pool = Executors.newFixedThreadPool(parallelism);
+
         try {
-            List<String> results = new java.util.ArrayList<>(count);
+            List<Callable<String>> tasks = new java.util.ArrayList<>(count);
             for (int i = 0; i < count; i++) {
-                results.add(runOnce(script));
+                tasks.add(() -> runOnce(script));
+            }
+
+            // invokeAll preserves the order of futures == the order of tasks
+            List<Future<String>> futures = pool.invokeAll(tasks);
+            List<String> results = new java.util.ArrayList<>(count);
+
+            for (Future<String> f : futures) {
+                try {
+                    results.add(f.get()); // if needed: f.get(timeout, unit)
+                } catch (Exception e) {
+                    results.add(
+                            "Exit code: -1\n"
+                                    + e.getClass().getSimpleName()
+                                    + ": "
+                                    + e.getMessage());
+                }
             }
             return results;
         } finally {
+            pool.shutdownNow();
             try {
                 Files.deleteIfExists(script);
             } catch (Exception ignore) {
