@@ -1,5 +1,6 @@
 package bg.reshavalnik.app.domain.model.task;
 
+import bg.reshavalnik.app.domain.entity.task.Section;
 import bg.reshavalnik.app.domain.enums.Grade;
 import lombok.*;
 
@@ -15,7 +16,7 @@ public class TaskRequestModel {
 
     @NonNull private String algorithm;
 
-    @NonNull private String textbookSection;
+    @NonNull private Section section;
 
     private byte[] img;
 }

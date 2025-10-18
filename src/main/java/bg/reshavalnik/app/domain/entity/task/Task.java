@@ -23,7 +23,7 @@ public class Task {
 
     @NonNull private String algorithm;
 
-    @NonNull private String textbookSection;
+    @NonNull private Section section;
 
     private LocalDateTime createdAt;
 

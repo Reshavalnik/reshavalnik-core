@@ -102,4 +102,25 @@ public class TaskController {
             throws Exception {
         return ResponseEntity.ok(taskService.generateTaskWithCount(taskId, count));
     }
+
+    @PostMapping("/add-section")
+    public ResponseEntity<?> addSection(@RequestParam("section") String section) {
+        return ResponseEntity.ok(taskService.addSection(section));
+    }
+
+    @PostMapping("/get-section")
+    public ResponseEntity<?> getSection(@RequestParam("sectionId") String sectionId) {
+        return ResponseEntity.ok(taskService.getSection(sectionId));
+    }
+
+    @GetMapping("/get-all-sections")
+    public ResponseEntity<?> getAllSections() {
+        return ResponseEntity.ok(taskService.getAllSections());
+    }
+
+    @DeleteMapping("/delete-section")
+    public ResponseEntity<?> deleteSection(@RequestParam("sectionId") String sectionId) {
+        taskService.deleteSection(sectionId);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
 }

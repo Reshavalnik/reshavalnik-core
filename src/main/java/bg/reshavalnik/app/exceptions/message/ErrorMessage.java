@@ -16,4 +16,8 @@ public class ErrorMessage {
     public static final String ERROR_WRITING_TEMPORARY_FILE = "Error writing temporary file: ";
     public static final String ERROR_READING_PROCESS_OUTPUT = "Error reading process output: ";
     public static final String PROCESS_WAS_INTERRUPTED = "Process was interrupted: ";
+
+    // Section
+    public static final String SECTION_ALREADY_EXISTS = "Section already exists";
+    public static final String SECTION_NOT_FOUND = "Section not found!";
 }
