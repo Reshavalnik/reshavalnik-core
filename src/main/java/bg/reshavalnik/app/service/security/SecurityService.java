@@ -11,6 +11,7 @@ import bg.reshavalnik.app.security.dto.request.LoginRequest;
 import bg.reshavalnik.app.security.dto.request.SignupRequest;
 import bg.reshavalnik.app.security.security.jwt.JwtUtils;
 import bg.reshavalnik.app.security.security.services.UserDetails;
+import bg.reshavalnik.app.security.security.services.UserDetailsService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +35,7 @@ public class SecurityService {
     private final UserRepository userRepository;
     private final PasswordEncoder encoder;
     private final UserMapper userMapper;
+    private final UserDetailsService userDetailsService;
 
     @Transactional(readOnly = true)
     public ResponseCookie getAuthenticateUser(@Valid LoginRequest loginRequest) {
@@ -120,6 +122,21 @@ public class SecurityService {
         String token = jwtUtils.generateJwtToken(authentication);
         log.info("User {} changed password successfully", user.getUsername());
 
+        return buildJwt(token);
+    }
+
+    @Transactional(readOnly = true)
+    public String authenticateByUsernameAndGenerateToken(String username) {
+        org.springframework.security.core.userdetails.UserDetails principal =
+                userDetailsService.loadUserByUsername(username);
+        Authentication authentication =
+                new UsernamePasswordAuthenticationToken(
+                        principal, null, principal.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        return jwtUtils.generateJwtToken(authentication);
+    }
+
+    public ResponseCookie buildJwtCookie(String token) {
         return buildJwt(token);
     }
 }
