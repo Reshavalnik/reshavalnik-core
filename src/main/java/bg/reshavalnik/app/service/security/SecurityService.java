@@ -64,6 +64,9 @@ public class SecurityService {
         String rawPassword = signUpRequest.getPassword();
         signUpRequest.setPassword(encoder.encode(rawPassword));
         User user = userMapper.mapToUser(signUpRequest);
+        if (user.getEmail() == null || user.getEmail().isBlank()) {
+            user.setEmail(signUpRequest.getEmail());
+        }
         user.setRoles(Role.USER);
         userRepository.save(user);
 
