@@ -18,6 +18,12 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
 
+/**
+ * Service responsible for Social Authentication (Google/Facebook).
+ *
+ * <p>Validates third-party tokens server-side, finds or creates the local user by email,
+ * and issues a JWT which is returned as an HttpOnly cookie and a raw token string.</p>
+ */
 @Service
 @AllArgsConstructor
 @Slf4j
@@ -41,19 +47,26 @@ public class SocialAuthService {
         if (!StringUtils.hasText(idToken)) {
             throw new IllegalArgumentException("Missing Google id_token");
         }
-        Map<String, Object> resp =
-                restClient
-                        .get()
-                        .uri(URI.create("https://oauth2.googleapis.com/tokeninfo?id_token=" + idToken))
-                        .retrieve()
-                        .body(Map.class);
-        if (resp == null || resp.get("email") == null) {
-            throw new IllegalArgumentException("Invalid Google token");
+        try {
+            Map<String, Object> resp = restClient
+                    .get()
+                    .uri(URI.create("https://oauth2.googleapis.com/tokeninfo?id_token=" + idToken))
+                    .retrieve()
+                    .body(Map.class);
+            if (resp == null || resp.get("email") == null) {
+                log.warn("Google token validation failed: response={}, id_hint={}", resp, maskToken(idToken));
+                throw new IllegalArgumentException("Invalid or expired Google token");
+            }
+            String email = String.valueOf(resp.get("email"));
+            String givenName = String.valueOf(resp.getOrDefault("given_name", ""));
+            String familyName = String.valueOf(resp.getOrDefault("family_name", ""));
+            SocialLoginResult result = linkUserAndIssueToken(email, givenName, familyName, "google");
+            log.info("Social login (google) successful for email={}", email);
+            return result;
+        } catch (org.springframework.web.client.RestClientException ex) {
+            log.warn("Error calling Google tokeninfo endpoint: {}", ex.getMessage());
+            throw ex;
         }
-        String email = String.valueOf(resp.get("email"));
-        String givenName = String.valueOf(resp.getOrDefault("given_name", ""));
-        String familyName = String.valueOf(resp.getOrDefault("family_name", ""));
-        return linkUserAndIssueToken(email, givenName, familyName, "google");
     }
 
     @Transactional
@@ -61,23 +74,28 @@ public class SocialAuthService {
         if (!StringUtils.hasText(accessToken)) {
             throw new IllegalArgumentException("Missing Facebook access_token");
         }
-        Map<String, Object> resp =
-                restClient
-                        .get()
-                        .uri(URI.create(
-                                "https://graph.facebook.com/me?fields=id,name,email&access_token="
-                                        + accessToken))
-                        .retrieve()
-                        .body(Map.class);
-        if (resp == null || resp.get("email") == null) {
-            throw new IllegalArgumentException("Invalid Facebook token or missing email permission");
+        try {
+            Map<String, Object> resp = restClient
+                    .get()
+                    .uri(URI.create("https://graph.facebook.com/me?fields=id,name,email&access_token=" + accessToken))
+                    .retrieve()
+                    .body(Map.class);
+            if (resp == null || resp.get("email") == null) {
+                log.warn("Facebook token validation failed: response={}, token_hint={}", resp, maskToken(accessToken));
+                throw new IllegalArgumentException("Invalid Facebook token or missing email permission");
+            }
+            String email = String.valueOf(resp.get("email"));
+            String name = String.valueOf(resp.getOrDefault("name", ""));
+            String[] parts = name.split(" ", 2);
+            String first = parts.length > 0 ? parts[0] : "";
+            String last = parts.length > 1 ? parts[1] : "";
+            SocialLoginResult result = linkUserAndIssueToken(email, first, last, "facebook");
+            log.info("Social login (facebook) successful for email={}", email);
+            return result;
+        } catch (org.springframework.web.client.RestClientException ex) {
+            log.warn("Error calling Facebook graph endpoint: {}", ex.getMessage());
+            throw ex;
         }
-        String email = String.valueOf(resp.get("email"));
-        String name = String.valueOf(resp.getOrDefault("name", ""));
-        String[] parts = name.split(" ", 2);
-        String first = parts.length > 0 ? parts[0] : "";
-        String last = parts.length > 1 ? parts[1] : "";
-        return linkUserAndIssueToken(email, first, last, "facebook");
     }
 
     private SocialLoginResult linkUserAndIssueToken(
@@ -144,5 +162,15 @@ public class SocialAuthService {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < n; i++) sb.append(RNG.nextInt(10));
         return sb.toString();
+    }
+
+    /**
+     * Masks a token for logging. Keeps only first and last 4 characters.
+     */
+    private String maskToken(String token) {
+        if (token == null) return "null";
+        int len = token.length();
+        if (len <= 8) return "***";
+        return token.substring(0, 4) + "..." + token.substring(len - 4);
     }
 }

@@ -1,59 +1,53 @@
 package bg.reshavalnik.app.controller;
 
-import bg.reshavalnik.app.exceptions.exeption.TaskExceptions;
-import jakarta.validation.ConstraintViolationException;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.client.RestClientException;
 
+import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ * Global exception mapper that converts common authentication and validation errors
+ * into concise JSON responses suitable for the frontend.
+ *
+ * <p>It intentionally returns 400 (Bad Request) for invalid/expired third-party tokens
+ * rather than 500, and logs details on the server for observability.</p>
+ */
 @ControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<?> handleIllegalArgument(IllegalArgumentException e) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+    @ExceptionHandler({IllegalArgumentException.class})
+    public ResponseEntity<Map<String, Object>> handleIllegalArgument(IllegalArgumentException ex, HttpServletRequest request) {
+        log.warn("Client error at {}: {}", request.getRequestURI(), ex.getMessage());
+        return badRequest(ex.getMessage());
     }
 
-    @ExceptionHandler(TaskExceptions.class)
-    public ResponseEntity<?> handleTaskExceptions(TaskExceptions e) {
-        log.error("Task exception: {}", e.getMessage());
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+    @ExceptionHandler({RestClientException.class})
+    public ResponseEntity<Map<String, Object>> handleRestClient(RestClientException ex, HttpServletRequest request) {
+        log.warn("Upstream auth provider error at {}: {}", request.getRequestURI(), ex.getMessage());
+        return badRequest("Unable to validate social token");
     }
 
-    @ExceptionHandler(FileNotFoundException.class)
-    public ResponseEntity<?> handleFileNotFound(FileNotFoundException e) {
-        log.error("File not found: {}", e.getMessage());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<Map<String, Object>> handleValidation(MethodArgumentNotValidException ex, HttpServletRequest request) {
+        log.warn("Validation failed at {}: {}", request.getRequestURI(), ex.getMessage());
+        return badRequest("Validation failed");
     }
 
-    @ExceptionHandler(IOException.class)
-    public ResponseEntity<?> handleIOException(IOException e) {
-        log.error("IO exception: {}", e.getMessage());
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-    }
-
-    @ExceptionHandler(InterruptedException.class)
-    public ResponseEntity<?> handleInterruptedException(InterruptedException e) {
-        log.error("Thread interrupted: {}", e.getMessage());
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-    }
-
-    @ExceptionHandler(ConstraintViolationException.class)
-    public ResponseEntity<Map<String, Object>> handleConstraintViolation(
-            ConstraintViolationException ex) {
-        List<String> errors =
-                ex.getConstraintViolations().stream()
-                        .map(v -> v.getPropertyPath() + ": " + v.getMessage())
-                        .toList();
-
-        return ResponseEntity.badRequest()
-                .body(Map.of("status", 400, "error", "Bad Request", "messages", errors));
+    private ResponseEntity<Map<String, Object>> badRequest(String message) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", Instant.now().toString());
+        body.put("status", HttpStatus.BAD_REQUEST.value());
+        body.put("error", "Bad Request");
+        body.put("message", message);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }
 }
