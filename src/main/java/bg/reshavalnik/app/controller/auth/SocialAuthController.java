@@ -10,6 +10,15 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
+/**
+ * REST endpoints for social authentication flows (token-exchange and optional redirect).
+ *
+ * <p>The frontend obtains an identity token (e.g., Google id_token) directly from the
+ * provider using its JavaScript SDK and sends it to the backend for verification.
+ * Backend validates the token, finds or creates the local user by email, issues
+ * a JWT and returns it via HttpOnly cookie. Optionally, a redirect URL is provided
+ * through the X-Redirect-To header for client navigation.</p>
+ */
 @RestController
 @RequestMapping("/auth")
 @AllArgsConstructor
@@ -19,6 +28,11 @@ public class SocialAuthController {
 
     public record SocialLoginRequest(@NotBlank String token, String redirectUri) {}
 
+    /**
+     * Token-exchange endpoint. Accepts a provider and a short-lived identity token from the client
+     * (e.g., Google id_token) and returns a session via HttpOnly cookie. Optionally includes
+     * an X-Redirect-To header to navigate the SPA to its callback page.
+     */
     @PostMapping("/oauth2/login/{provider}")
     public ResponseEntity<AuthResponse> socialLogin(
             @PathVariable("provider") String provider, @RequestBody SocialLoginRequest body) {
@@ -51,6 +65,10 @@ public class SocialAuthController {
         return resp.body(AuthResponse.builder().tokenType("Bearer").user(profile).build());
     }
 
+    /**
+     * Optional redirect-based bridge that accepts tokens as query params and redirects to the SPA
+     * with a JWT token attached. Prefer using the POST token-exchange endpoint from the frontend.
+     */
     @GetMapping("/oauth2/authorize/{provider}")
     public ResponseEntity<Void> authorizeAndRedirect(
             @PathVariable("provider") String provider,
