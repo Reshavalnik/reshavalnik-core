@@ -19,9 +19,14 @@ public abstract class BaseSignup {
 
     @NotBlank
     @Size(max = 60)
-    @Email
     @JsonProperty(required = true)
     String username;
+
+    @NotBlank
+    @Email
+    @Size(max = 100)
+    @JsonProperty(required = true)
+    String email;
 
     @NotBlank
     @ValidPassword

@@ -57,9 +57,8 @@ public class WebSecurityConfig {
                         session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(
                         auth ->
-                                auth.requestMatchers("/auth/**")
-                                        .permitAll()
-                                        .requestMatchers("/api/**")
+                                auth
+                                        .requestMatchers("/auth/signin", "/auth/signup", "/auth/logout", "/auth/oauth2/**")
                                         .permitAll()
                                         .requestMatchers("/swagger-ui/**")
                                         .permitAll()
@@ -101,6 +100,10 @@ public class WebSecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
+        // Fallback to localhost if not provided via configuration
+        if (allowedOrigins == null || allowedOrigins.isEmpty()) {
+            allowedOrigins = List.of("http://localhost:4200", "http://localhost:5173");
+        }
         configuration.setAllowedOrigins(allowedOrigins);
         configuration.setAllowedMethods(
                 List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
