@@ -16,6 +16,11 @@ public class ErrorMessage {
     public static final String ERROR_WRITING_TEMPORARY_FILE = "Error writing temporary file: ";
     public static final String ERROR_READING_PROCESS_OUTPUT = "Error reading process output: ";
     public static final String PROCESS_WAS_INTERRUPTED = "Process was interrupted: ";
+    public static final String THERE_IS_NO_SUCH_TASK_FOR_THIS_USER =
+            "There is no such task for this user.";
+
+    //    ResultExam
+    public static final String RESULT_EXAM_DOES_NOT_EXIST = "The exam result does not exist.";
 
     // Section
     public static final String SECTION_ALREADY_EXISTS = "Section already exists";

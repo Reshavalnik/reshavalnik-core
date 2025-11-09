@@ -21,8 +21,8 @@ import org.springframework.web.client.RestClient;
 /**
  * Service responsible for Social Authentication (Google/Facebook).
  *
- * <p>Validates third-party tokens server-side, finds or creates the local user by email,
- * and issues a JWT which is returned as an HttpOnly cookie and a raw token string.</p>
+ * <p>Validates third-party tokens server-side, finds or creates the local user by email, and issues
+ * a JWT which is returned as an HttpOnly cookie and a raw token string.
  */
 @Service
 @AllArgsConstructor
@@ -48,19 +48,27 @@ public class SocialAuthService {
             throw new IllegalArgumentException("Missing Google id_token");
         }
         try {
-            Map<String, Object> resp = restClient
-                    .get()
-                    .uri(URI.create("https://oauth2.googleapis.com/tokeninfo?id_token=" + idToken))
-                    .retrieve()
-                    .body(Map.class);
+            Map<String, Object> resp =
+                    restClient
+                            .get()
+                            .uri(
+                                    URI.create(
+                                            "https://oauth2.googleapis.com/tokeninfo?id_token="
+                                                    + idToken))
+                            .retrieve()
+                            .body(Map.class);
             if (resp == null || resp.get("email") == null) {
-                log.warn("Google token validation failed: response={}, id_hint={}", resp, maskToken(idToken));
+                log.warn(
+                        "Google token validation failed: response={}, id_hint={}",
+                        resp,
+                        maskToken(idToken));
                 throw new IllegalArgumentException("Invalid or expired Google token");
             }
             String email = String.valueOf(resp.get("email"));
             String givenName = String.valueOf(resp.getOrDefault("given_name", ""));
             String familyName = String.valueOf(resp.getOrDefault("family_name", ""));
-            SocialLoginResult result = linkUserAndIssueToken(email, givenName, familyName, "google");
+            SocialLoginResult result =
+                    linkUserAndIssueToken(email, givenName, familyName, "google");
             log.info("Social login (google) successful for email={}", email);
             return result;
         } catch (org.springframework.web.client.RestClientException ex) {
@@ -75,14 +83,22 @@ public class SocialAuthService {
             throw new IllegalArgumentException("Missing Facebook access_token");
         }
         try {
-            Map<String, Object> resp = restClient
-                    .get()
-                    .uri(URI.create("https://graph.facebook.com/me?fields=id,name,email&access_token=" + accessToken))
-                    .retrieve()
-                    .body(Map.class);
+            Map<String, Object> resp =
+                    restClient
+                            .get()
+                            .uri(
+                                    URI.create(
+                                            "https://graph.facebook.com/me?fields=id,name,email&access_token="
+                                                    + accessToken))
+                            .retrieve()
+                            .body(Map.class);
             if (resp == null || resp.get("email") == null) {
-                log.warn("Facebook token validation failed: response={}, token_hint={}", resp, maskToken(accessToken));
-                throw new IllegalArgumentException("Invalid Facebook token or missing email permission");
+                log.warn(
+                        "Facebook token validation failed: response={}, token_hint={}",
+                        resp,
+                        maskToken(accessToken));
+                throw new IllegalArgumentException(
+                        "Invalid Facebook token or missing email permission");
             }
             String email = String.valueOf(resp.get("email"));
             String name = String.valueOf(resp.getOrDefault("name", ""));
@@ -109,7 +125,8 @@ public class SocialAuthService {
                             u.setFirstName(firstName);
                             u.setLastName(lastName);
                             u.setUsername(generateUsername(email, provider));
-                            // Set a strong random password that meets policy, though it won't be used for social login
+                            // Set a strong random password that meets policy, though it won't be
+                            // used for social login
                             u.setPassword(generateStrongPassword());
                             u.setRoles(Role.USER);
                             return userRepository.save(u);
@@ -121,7 +138,10 @@ public class SocialAuthService {
     }
 
     private String generateUsername(String email, String provider) {
-        String base = (email != null && email.contains("@")) ? email.substring(0, email.indexOf('@')) : "user";
+        String base =
+                (email != null && email.contains("@"))
+                        ? email.substring(0, email.indexOf('@'))
+                        : "user";
         base = base.replaceAll("[^a-zA-Z0-9]", "").toLowerCase(Locale.ROOT);
         String suffix = "_" + provider + randomDigits(4);
         String candidate = base + suffix;
@@ -164,9 +184,7 @@ public class SocialAuthService {
         return sb.toString();
     }
 
-    /**
-     * Masks a token for logging. Keeps only first and last 4 characters.
-     */
+    /** Masks a token for logging. Keeps only first and last 4 characters. */
     private String maskToken(String token) {
         if (token == null) return "null";
         int len = token.length();

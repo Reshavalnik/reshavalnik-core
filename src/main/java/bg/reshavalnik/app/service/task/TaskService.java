@@ -2,16 +2,20 @@ package bg.reshavalnik.app.service.task;
 
 import static bg.reshavalnik.app.exceptions.message.ErrorMessage.*;
 
+import bg.reshavalnik.app.domain.entity.resultExam.ResultExam;
 import bg.reshavalnik.app.domain.entity.task.ExamTask;
 import bg.reshavalnik.app.domain.entity.task.Section;
 import bg.reshavalnik.app.domain.entity.task.Task;
 import bg.reshavalnik.app.domain.enums.Grade;
 import bg.reshavalnik.app.domain.model.exam.ExamTaskExistResponseModel;
+import bg.reshavalnik.app.domain.model.resultExam.ResultExamDto;
 import bg.reshavalnik.app.domain.model.task.*;
 import bg.reshavalnik.app.domain.model.task.GeneratedTask;
 import bg.reshavalnik.app.exceptions.exeption.TaskExceptions;
+import bg.reshavalnik.app.mapper.resultExam.ResultExamMapper;
 import bg.reshavalnik.app.mapper.task.TaskMapper;
 import bg.reshavalnik.app.repository.ExamTaskRepository;
+import bg.reshavalnik.app.repository.resultExam.ResultExamRepository;
 import bg.reshavalnik.app.repository.section.SectionRepository;
 import bg.reshavalnik.app.repository.task.TaskRepository;
 import bg.reshavalnik.app.security.security.services.UserDetails;
@@ -42,6 +46,10 @@ public class TaskService {
     private final SectionRepository sectionRepository;
 
     private final ExamTaskRepository examTaskRepository;
+
+    private final ResultExamRepository resultExamRepository;
+
+    private final ResultExamMapper resultExamMapper;
 
     public TaskResponseModel createTask(
             @Valid TaskRequestModel model, String userId, MultipartFile file) throws IOException {
@@ -130,6 +138,7 @@ public class TaskService {
         try {
             TaskResponseModel taskResponseModel = getTaskById(requestModel.getTaskId());
             ExamTask examTask = taskMapper.mapExamTask(taskResponseModel);
+            examTask.setId(null);
             examTask.setGeneratedByUserId(userDetails.getId());
             LocalDateTime now = LocalDateTime.now();
             examTask.setCreatedAt(now);
@@ -286,9 +295,9 @@ public class TaskService {
                 .orElseThrow(() -> new TaskExceptions(TASK_NOT_FOUND));
     }
 
-    private Task findTaskById(String modelId) {
+    private Task findTaskById(String taskId) {
         return taskRepository
-                .findById(modelId)
+                .findById(taskId)
                 .orElseThrow(() -> new TaskExceptions(TASK_NOT_FOUND));
     }
 
@@ -297,7 +306,7 @@ public class TaskService {
         ExamTask examTask =
                 examTaskRepository
                         .findById(taskId)
-                        .orElseThrow(() -> new TaskExceptions(TASK_NOT_FOUND));
+                        .orElseThrow(() -> new TaskExceptions(THERE_IS_NO_SUCH_TASK_FOR_THIS_USER));
         return taskMapper.mapToExamTaskExistResponseModel(examTask);
     }
 
@@ -308,5 +317,38 @@ public class TaskService {
                         .findAllByGeneratedByUserId(id)
                         .orElseThrow(() -> new TaskExceptions(TASK_NOT_FOUND));
         return taskMapper.mapToExamExistResponseModelList(examTasks);
+    }
+
+    public Boolean checkResultExam(String examId, String taskExamId, String answer, String userId) {
+        log.info("Check exam result by exam ID: {}", examId);
+        ExamTask examTask =
+                examTaskRepository
+                        .findById(taskExamId)
+                        .orElseThrow(() -> new TaskExceptions(TASK_NOT_FOUND));
+        GeneratedTask generatedTask =
+                examTask.getTasks().stream()
+                        .filter(f -> f.getId().equals(examId))
+                        .findFirst()
+                        .orElseThrow(() -> new TaskExceptions(TASK_NOT_FOUND));
+        if (!userId.equals(generatedTask.getUserId())) {
+            throw new TaskExceptions(SECTION_ALREADY_EXISTS);
+        }
+        boolean result = generatedTask.getAnswer().equalsIgnoreCase(answer);
+        ResultExam resultExam = taskMapper.mapToResultExam(examTask);
+        resultExam.setId(null);
+        resultExam.setUserId(userId);
+        resultExam.setResult(result);
+        resultExam.setSectionName(examTask.getSection().getSection());
+        resultExam.setExamDate(LocalDateTime.now());
+        resultExamRepository.save(resultExam);
+
+        return result;
+    }
+
+    public List<ResultExamDto> getAllResultExamByUser(String userId) {
+        return resultExamMapper.mapToResultExamDtos(
+                resultExamRepository
+                        .getAllByUserId(userId)
+                        .orElseThrow(() -> new TaskExceptions(RESULT_EXAM_DOES_NOT_EXIST)));
     }
 }
