@@ -57,8 +57,11 @@ public class WebSecurityConfig {
                         session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(
                         auth ->
-                                auth
-                                        .requestMatchers("/auth/signin", "/auth/signup", "/auth/logout", "/auth/oauth2/**")
+                                auth.requestMatchers(
+                                                "/auth/signin",
+                                                "/auth/signup",
+                                                "/auth/logout",
+                                                "/auth/oauth2/**")
                                         .permitAll()
                                         .requestMatchers("/swagger-ui/**")
                                         .permitAll()

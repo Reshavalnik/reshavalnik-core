@@ -13,11 +13,10 @@ import org.springframework.web.util.UriComponentsBuilder;
 /**
  * REST endpoints for social authentication flows (token-exchange and optional redirect).
  *
- * <p>The frontend obtains an identity token (e.g., Google id_token) directly from the
- * provider using its JavaScript SDK and sends it to the backend for verification.
- * Backend validates the token, finds or creates the local user by email, issues
- * a JWT and returns it via HttpOnly cookie. Optionally, a redirect URL is provided
- * through the X-Redirect-To header for client navigation.</p>
+ * <p>The frontend obtains an identity token (e.g., Google id_token) directly from the provider
+ * using its JavaScript SDK and sends it to the backend for verification. Backend validates the
+ * token, finds or creates the local user by email, issues a JWT and returns it via HttpOnly cookie.
+ * Optionally, a redirect URL is provided through the X-Redirect-To header for client navigation.
  */
 @RestController
 @RequestMapping("/auth")
@@ -30,35 +29,40 @@ public class SocialAuthController {
 
     /**
      * Token-exchange endpoint. Accepts a provider and a short-lived identity token from the client
-     * (e.g., Google id_token) and returns a session via HttpOnly cookie. Optionally includes
-     * an X-Redirect-To header to navigate the SPA to its callback page.
+     * (e.g., Google id_token) and returns a session via HttpOnly cookie. Optionally includes an
+     * X-Redirect-To header to navigate the SPA to its callback page.
      */
     @PostMapping("/oauth2/login/{provider}")
     public ResponseEntity<AuthResponse> socialLogin(
             @PathVariable("provider") String provider, @RequestBody SocialLoginRequest body) {
-        SocialAuthService.SocialLoginResult result = switch (provider.toLowerCase()) {
-            case "google" -> socialAuthService.loginWithGoogleIdToken(body.token());
-            case "facebook" -> socialAuthService.loginWithFacebookAccessToken(body.token());
-            default -> throw new IllegalArgumentException("Unsupported provider: " + provider);
-        };
+        SocialAuthService.SocialLoginResult result =
+                switch (provider.toLowerCase()) {
+                    case "google" -> socialAuthService.loginWithGoogleIdToken(body.token());
+                    case "facebook" -> socialAuthService.loginWithFacebookAccessToken(body.token());
+                    default -> throw new IllegalArgumentException(
+                            "Unsupported provider: " + provider);
+                };
 
-        UserProfile profile = UserProfile.builder()
-                .id(result.getUser().getId())
-                .username(result.getUser().getUsername())
-                .email(result.getUser().getEmail())
-                .firstName(result.getUser().getFirstName())
-                .lastName(result.getUser().getLastName())
-                .roles(result.getUser().getRoles())
-                .build();
+        UserProfile profile =
+                UserProfile.builder()
+                        .id(result.getUser().getId())
+                        .username(result.getUser().getUsername())
+                        .email(result.getUser().getEmail())
+                        .firstName(result.getUser().getFirstName())
+                        .lastName(result.getUser().getLastName())
+                        .roles(result.getUser().getRoles())
+                        .build();
 
-        ResponseEntity.BodyBuilder resp = ResponseEntity.ok()
-                .header(HttpHeaders.SET_COOKIE, result.getCookie().toString());
+        ResponseEntity.BodyBuilder resp =
+                ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, result.getCookie().toString());
 
         if (body.redirectUri() != null && !body.redirectUri().isBlank()) {
             // Some clients may prefer redirect; include redirect URL in response for convenience
-            String redirect = UriComponentsBuilder.fromUriString(body.redirectUri())
-                    .queryParam("token", result.getToken())
-                    .build().toUriString();
+            String redirect =
+                    UriComponentsBuilder.fromUriString(body.redirectUri())
+                            .queryParam("token", result.getToken())
+                            .build()
+                            .toUriString();
             resp.header("X-Redirect-To", redirect);
         }
 
@@ -90,14 +94,17 @@ public class SocialAuthController {
             }
         } else {
             // If generic token was provided, try both (best-effort)
-            result = "google".equalsIgnoreCase(provider)
-                    ? socialAuthService.loginWithGoogleIdToken(tokenToUse)
-                    : socialAuthService.loginWithFacebookAccessToken(tokenToUse);
+            result =
+                    "google".equalsIgnoreCase(provider)
+                            ? socialAuthService.loginWithGoogleIdToken(tokenToUse)
+                            : socialAuthService.loginWithFacebookAccessToken(tokenToUse);
         }
 
-        String redirect = UriComponentsBuilder.fromUriString(redirectUri)
-                .queryParam("token", result.getToken())
-                .build().toUriString();
+        String redirect =
+                UriComponentsBuilder.fromUriString(redirectUri)
+                        .queryParam("token", result.getToken())
+                        .build()
+                        .toUriString();
 
         return ResponseEntity.status(302)
                 .header(HttpHeaders.LOCATION, redirect)

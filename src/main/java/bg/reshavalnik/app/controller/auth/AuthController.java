@@ -29,7 +29,8 @@ public class AuthController {
     private final UserRepository userRepository;
 
     @PostMapping("/signin")
-    public ResponseEntity<AuthResponse> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
+    public ResponseEntity<AuthResponse> authenticateUser(
+            @Valid @RequestBody LoginRequest loginRequest) {
         var cookie = securityService.getAuthenticateUser(loginRequest);
         var profile = getCurrentUserProfile();
         return ResponseEntity.ok()
@@ -38,7 +39,8 @@ public class AuthController {
     }
 
     @PostMapping("/signup")
-    public ResponseEntity<AuthResponse> registerUser(@Valid @RequestBody SignupRequest signUpRequest) {
+    public ResponseEntity<AuthResponse> registerUser(
+            @Valid @RequestBody SignupRequest signUpRequest) {
         var cookie = securityService.saveRegisterUser(signUpRequest);
         var profile = getCurrentUserProfile();
         return ResponseEntity.ok()
