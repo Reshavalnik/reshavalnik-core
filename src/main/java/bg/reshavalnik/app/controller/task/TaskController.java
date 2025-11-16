@@ -129,4 +129,34 @@ public class TaskController {
         taskService.deleteSection(sectionId);
         return new ResponseEntity<>(HttpStatus.OK);
     }
+
+    @GetMapping("/check-result-exam")
+    public ResponseEntity<?> checkResultExam(
+            @RequestParam("examId") String examId,
+            @RequestParam("taskExamId") String taskExamId,
+            @RequestParam("answer") String answer,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        return new ResponseEntity<>(
+                taskService.checkResultExam(examId, taskExamId, answer, userDetails.getId()),
+                HttpStatus.OK);
+    }
+
+    @GetMapping("/get-all-result-exam-by-user")
+    public ResponseEntity<?> getAllResultExamByUser(@RequestParam("userId") String userId) {
+        return new ResponseEntity<>(taskService.getAllResultExamByUser(userId), HttpStatus.OK);
+    }
+
+    @GetMapping("/fetch-pending-exam")
+    public ResponseEntity<?> fetchPendingExam(@AuthenticationPrincipal UserDetails userDetails) {
+        return new ResponseEntity<>(
+                taskService.fetchPendingExam(userDetails.getId()), HttpStatus.OK);
+    }
+
+    @PostMapping("/finish-exam")
+    public ResponseEntity<?> finishExam(
+            @RequestParam("examId") String examId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        return new ResponseEntity<>(
+                taskService.finishExam(examId, userDetails.getId()), HttpStatus.OK);
+    }
 }

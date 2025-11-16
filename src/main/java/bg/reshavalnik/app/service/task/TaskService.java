@@ -2,24 +2,33 @@ package bg.reshavalnik.app.service.task;
 
 import static bg.reshavalnik.app.exceptions.message.ErrorMessage.*;
 
+import bg.reshavalnik.app.domain.entity.pendingExam.PendingExam;
+import bg.reshavalnik.app.domain.entity.resultExam.ResultExam;
 import bg.reshavalnik.app.domain.entity.task.ExamTask;
 import bg.reshavalnik.app.domain.entity.task.Section;
 import bg.reshavalnik.app.domain.entity.task.Task;
 import bg.reshavalnik.app.domain.enums.Grade;
 import bg.reshavalnik.app.domain.model.exam.ExamTaskExistResponseModel;
+import bg.reshavalnik.app.domain.model.resultExam.*;
 import bg.reshavalnik.app.domain.model.task.*;
 import bg.reshavalnik.app.domain.model.task.GeneratedTask;
 import bg.reshavalnik.app.exceptions.exeption.TaskExceptions;
+import bg.reshavalnik.app.mapper.resultExam.ResultExamMapper;
 import bg.reshavalnik.app.mapper.task.TaskMapper;
 import bg.reshavalnik.app.repository.ExamTaskRepository;
+import bg.reshavalnik.app.repository.pendingExam.PendingExamRepository;
+import bg.reshavalnik.app.repository.resultExam.ResultExamRepository;
 import bg.reshavalnik.app.repository.section.SectionRepository;
 import bg.reshavalnik.app.repository.task.TaskRepository;
+import bg.reshavalnik.app.repository.user.UserRepository;
+import bg.reshavalnik.app.security.domain.User;
 import bg.reshavalnik.app.security.security.services.UserDetails;
 import bg.reshavalnik.app.service.script.ScriptService;
 import jakarta.validation.Valid;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import lombok.NonNull;
@@ -42,6 +51,14 @@ public class TaskService {
     private final SectionRepository sectionRepository;
 
     private final ExamTaskRepository examTaskRepository;
+
+    private final ResultExamRepository resultExamRepository;
+
+    private final ResultExamMapper resultExamMapper;
+
+    private final PendingExamRepository pendingExamRepository;
+
+    private final UserRepository userRepository;
 
     public TaskResponseModel createTask(
             @Valid TaskRequestModel model, String userId, MultipartFile file) throws IOException {
@@ -130,6 +147,7 @@ public class TaskService {
         try {
             TaskResponseModel taskResponseModel = getTaskById(requestModel.getTaskId());
             ExamTask examTask = taskMapper.mapExamTask(taskResponseModel);
+            examTask.setId(null);
             examTask.setGeneratedByUserId(userDetails.getId());
             LocalDateTime now = LocalDateTime.now();
             examTask.setCreatedAt(now);
@@ -155,6 +173,13 @@ public class TaskService {
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private void savePendingExam(String generatedId, String userId) {
+        PendingExam pendingExam = new PendingExam();
+        pendingExam.setId(generatedId);
+        pendingExam.setUserId(userId);
+        pendingExamRepository.save(pendingExam);
     }
 
     private GeneratedTask mapGeneratedTaskToTask(
@@ -229,6 +254,8 @@ public class TaskService {
         gt.setSolution(solutionText);
         gt.setUserId(userId);
         gt.setId(generateId(generatedByUserId, userId, timestamp, index));
+
+        savePendingExam(gt.getId(), userId);
         return gt;
     }
 
@@ -286,9 +313,9 @@ public class TaskService {
                 .orElseThrow(() -> new TaskExceptions(TASK_NOT_FOUND));
     }
 
-    private Task findTaskById(String modelId) {
+    private Task findTaskById(String taskId) {
         return taskRepository
-                .findById(modelId)
+                .findById(taskId)
                 .orElseThrow(() -> new TaskExceptions(TASK_NOT_FOUND));
     }
 
@@ -297,7 +324,7 @@ public class TaskService {
         ExamTask examTask =
                 examTaskRepository
                         .findById(taskId)
-                        .orElseThrow(() -> new TaskExceptions(TASK_NOT_FOUND));
+                        .orElseThrow(() -> new TaskExceptions(THERE_IS_NO_SUCH_TASK_FOR_THIS_USER));
         return taskMapper.mapToExamTaskExistResponseModel(examTask);
     }
 
@@ -308,5 +335,132 @@ public class TaskService {
                         .findAllByGeneratedByUserId(id)
                         .orElseThrow(() -> new TaskExceptions(TASK_NOT_FOUND));
         return taskMapper.mapToExamExistResponseModelList(examTasks);
+    }
+
+    public CheckResultExamDto checkResultExam(
+            String examId, String taskExamId, String answer, String userId) {
+        log.info("Check exam result by exam ID: {}", examId);
+        ExamTask examTask =
+                examTaskRepository
+                        .findById(taskExamId)
+                        .orElseThrow(() -> new TaskExceptions(TASK_NOT_FOUND));
+        GeneratedTask generatedTask =
+                examTask.getTasks().stream()
+                        .filter(f -> f.getId().equals(examId))
+                        .findFirst()
+                        .orElseThrow(() -> new TaskExceptions(TASK_NOT_FOUND));
+        if (!userId.equals(generatedTask.getUserId())) {
+            throw new TaskExceptions(SECTION_ALREADY_EXISTS);
+        }
+        boolean result = generatedTask.getAnswer().equalsIgnoreCase(answer);
+        ResultExam resultExam = taskMapper.mapToResultExam(examTask);
+        resultExam.setId(null);
+        resultExam.setExamId(examId);
+        resultExam.setUserId(userId);
+        resultExam.setResult(result);
+        resultExam.setUserAnswer(answer);
+        resultExam.setSectionName(examTask.getSection().getSection());
+        resultExam.setExamDate(LocalDateTime.now());
+        resultExamRepository.save(resultExam);
+
+        CheckResultExamDto checkResultExamDto = new CheckResultExamDto();
+        checkResultExamDto.setTask(generatedTask.getTask());
+        checkResultExamDto.setOptions(generatedTask.getOptions());
+        checkResultExamDto.setAnswer(generatedTask.getAnswer());
+        checkResultExamDto.setHint(generatedTask.getHint());
+        checkResultExamDto.setSolution(generatedTask.getSolution());
+        checkResultExamDto.setResult(result);
+
+        removePendingExam(examId, userId);
+
+        return checkResultExamDto;
+    }
+
+    private void removePendingExam(String examId, String userId) {
+        PendingExam pendingExam =
+                pendingExamRepository
+                        .findById(examId)
+                        .orElseThrow(() -> new TaskExceptions(TASK_NOT_FOUND));
+        pendingExamRepository.delete(pendingExam);
+    }
+
+    public List<ResultExamDto> getAllResultExamByUser(String userId) {
+        return resultExamMapper.mapToResultExamDtos(
+                resultExamRepository
+                        .getAllByUserId(userId)
+                        .orElseThrow(() -> new TaskExceptions(RESULT_EXAM_DOES_NOT_EXIST)));
+    }
+
+    public GeneratedTaskResponse fetchPendingExam(String userId) {
+        PendingExam pendingExam =
+                pendingExamRepository
+                        .findByUserId(userId)
+                        .orElseThrow(() -> new TaskExceptions(THERE_IS_NOT_EXIST_PENDING_EXAM));
+
+        ExamTask examTask =
+                examTaskRepository
+                        .findByTasksId(pendingExam.getId())
+                        .orElseThrow(() -> new TaskExceptions(TASK_NOT_FOUND));
+
+        GeneratedTask generatedTask =
+                examTask.getTasks().stream()
+                        .filter(t -> userId.equals(t.getUserId()))
+                        .findFirst()
+                        .orElseThrow(() -> new TaskExceptions(TASK_NOT_FOUND));
+
+        generatedTask.setExamTaskId(examTask.getId());
+
+        return taskMapper.mapToGeneratedTaskDto(generatedTask);
+    }
+
+    public FinishExamResult finishExam(String taskId, String userId) {
+        ExamTask examTask =
+                examTaskRepository
+                        .findByIdAndGeneratedByUserId(taskId, userId)
+                        .orElseThrow(() -> new TaskExceptions(TASK_NOT_FOUND));
+
+        FinishExamResult finishExamResult = new FinishExamResult();
+
+        for (GeneratedTask task : examTask.getTasks()) {
+            User user =
+                    userRepository
+                            .findById(task.getUserId())
+                            .orElseThrow(() -> new TaskExceptions(USER_NOT_FOUND));
+            Optional<PendingExam> pendingExamOpt =
+                    pendingExamRepository.findByUserId(task.getUserId());
+            if (pendingExamOpt.isPresent() && pendingExamOpt.get().getId() != null) {
+                toUncompletedUsers(user, finishExamResult, pendingExamOpt);
+                pendingExamRepository.delete(pendingExamOpt.get());
+                continue;
+            }
+
+            ResultExam resultExam =
+                    resultExamRepository
+                            .findByUserId(task.getUserId())
+                            .orElseThrow(() -> new TaskExceptions(TASK_NOT_FOUND));
+            toCompletedUsers(user, finishExamResult, resultExam);
+        }
+
+        return finishExamResult;
+    }
+
+    private void toCompletedUsers(
+            User user, FinishExamResult finishExamResult, ResultExam resultExam) {
+        CompletedUsersDto completedUser = new CompletedUsersDto();
+        completedUser.setFirstName(user.getFirstName());
+        completedUser.setLastName(user.getLastName());
+        completedUser.setResult(resultExam.getResult());
+        completedUser.setUserAnswer(resultExam.getUserAnswer());
+
+        finishExamResult.getCompletedUsers().add(completedUser);
+    }
+
+    private void toUncompletedUsers(
+            User user, FinishExamResult finishExamResult, Optional<PendingExam> pendingExamOpt) {
+        UncompletedUsersDto uncompletedUsers = new UncompletedUsersDto();
+        uncompletedUsers.setFirstName(user.getFirstName());
+        uncompletedUsers.setLastName(user.getLastName());
+
+        finishExamResult.getUncompletedUserDtos().add(uncompletedUsers);
     }
 }

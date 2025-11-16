@@ -1,17 +1,16 @@
-package bg.reshavalnik.app.domain.model.task;
+package bg.reshavalnik.app.domain.model.resultExam;
 
 import java.util.Map;
-import lombok.*;
+import lombok.Getter;
+import lombok.Setter;
 
 @Getter
 @Setter
-public class GeneratedTask {
-    private String id;
-    private String examTaskId;
-    private String userId;
+public class CheckResultExamDto {
     private String task;
     private Map<String, String> options;
     private String answer;
     private String hint;
     private String solution;
+    private boolean result;
 }

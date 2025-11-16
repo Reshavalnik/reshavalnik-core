@@ -1,12 +1,10 @@
 package bg.reshavalnik.app.mapper.task;
 
+import bg.reshavalnik.app.domain.entity.resultExam.ResultExam;
 import bg.reshavalnik.app.domain.entity.task.ExamTask;
 import bg.reshavalnik.app.domain.entity.task.Task;
 import bg.reshavalnik.app.domain.model.exam.ExamTaskExistResponseModel;
-import bg.reshavalnik.app.domain.model.task.ExamTaskResponseModel;
-import bg.reshavalnik.app.domain.model.task.TaskRequestModel;
-import bg.reshavalnik.app.domain.model.task.TaskResponseModel;
-import bg.reshavalnik.app.domain.model.task.TaskUpdateRequestModel;
+import bg.reshavalnik.app.domain.model.task.*;
 import java.util.List;
 import org.mapstruct.Mapper;
 import org.mapstruct.MappingTarget;
@@ -30,4 +28,8 @@ public interface TaskMapper {
     ExamTaskExistResponseModel mapToExamTaskExistResponseModel(ExamTask response);
 
     List<ExamTaskExistResponseModel> mapToExamExistResponseModelList(List<ExamTask> examTasks);
+
+    ResultExam mapToResultExam(ExamTask examTask);
+
+    GeneratedTaskResponse mapToGeneratedTaskDto(GeneratedTask gt);
 }

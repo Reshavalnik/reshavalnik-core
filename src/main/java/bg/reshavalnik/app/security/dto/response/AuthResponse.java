@@ -11,6 +11,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class AuthResponse {
     private String accessToken; // optional; cookie is primary
-    private String tokenType;   // e.g., Bearer
+    private String tokenType; // e.g., Bearer
     private UserProfile user;
 }

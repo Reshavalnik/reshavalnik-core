@@ -7,4 +7,8 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 
 public interface ExamTaskRepository extends MongoRepository<ExamTask, String> {
     Optional<List<ExamTask>> findAllByGeneratedByUserId(String id);
+
+    Optional<ExamTask> findByTasksId(String generatedTaskId);
+
+    Optional<ExamTask> findByIdAndGeneratedByUserId(String taskId, String userId);
 }
