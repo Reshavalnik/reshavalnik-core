@@ -8,7 +8,6 @@ import lombok.Setter;
 @Setter
 public class GeneratedTaskResponse {
     private String id;
-    private String examTaskId;
     private String userId;
     private String task;
     private Map<String, String> options;

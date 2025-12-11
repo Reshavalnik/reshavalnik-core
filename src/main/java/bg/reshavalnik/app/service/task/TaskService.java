@@ -397,20 +397,19 @@ public class TaskService {
                         .findByUserId(userId)
                         .orElseThrow(() -> new TaskExceptions(THERE_IS_NOT_EXIST_PENDING_EXAM));
 
-        ExamTask examTask =
+        GeneratedTask gt =
                 examTaskRepository
                         .findByTasksId(pendingExam.getId())
+                        .map(
+                                examTask ->
+                                        examTask.getTasks().stream()
+                                                .filter(t -> userId.equals(t.getUserId()))
+                                                .findFirst()
+                                                .orElseThrow(
+                                                        () -> new TaskExceptions(TASK_NOT_FOUND)))
                         .orElseThrow(() -> new TaskExceptions(TASK_NOT_FOUND));
 
-        GeneratedTask generatedTask =
-                examTask.getTasks().stream()
-                        .filter(t -> userId.equals(t.getUserId()))
-                        .findFirst()
-                        .orElseThrow(() -> new TaskExceptions(TASK_NOT_FOUND));
-
-        generatedTask.setExamTaskId(examTask.getId());
-
-        return taskMapper.mapToGeneratedTaskDto(generatedTask);
+        return taskMapper.mapToGeneratedTaskDto(gt);
     }
 
     public FinishExamResult finishExam(String taskId, String userId) {
