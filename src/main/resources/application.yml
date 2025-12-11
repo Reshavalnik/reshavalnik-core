@@ -9,7 +9,7 @@ server:
   port: 8080
 
 python:
-  bin: python3
+  bin: ./reshavalnik-python-runner
 
 springdoc:
   api-docs:
