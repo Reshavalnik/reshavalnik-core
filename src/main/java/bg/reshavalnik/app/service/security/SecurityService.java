@@ -26,7 +26,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-@AllArgsConstructor
+@lombok.RequiredArgsConstructor
 @Service
 @Slf4j
 public class SecurityService {
@@ -36,6 +36,15 @@ public class SecurityService {
     private final PasswordEncoder encoder;
     private final UserMapper userMapper;
     private final UserDetailsService userDetailsService;
+
+    @org.springframework.beans.factory.annotation.Value("${jwt.cookie.name:JWT}")
+    private String jwtCookieName;
+
+    @org.springframework.beans.factory.annotation.Value("${jwt.cookie.sameSite:Lax}")
+    private String jwtCookieSameSite;
+
+    @org.springframework.beans.factory.annotation.Value("${jwt.cookie.secure:true}")
+    private boolean jwtCookieSecure;
 
     @Transactional(readOnly = true)
     public ResponseCookie getAuthenticateUser(@Valid LoginRequest loginRequest) {
@@ -84,12 +93,12 @@ public class SecurityService {
     }
 
     private ResponseCookie buildJwt(String token) {
-        return ResponseCookie.from("JWT", token)
+        return ResponseCookie.from(jwtCookieName, token)
                 .httpOnly(true)
-                .secure(true)
+                .secure(jwtCookieSecure)
                 .path("/")
                 .maxAge(jwtUtils.getJwtExpirationMs() / 1000)
-                .sameSite("Strict")
+                .sameSite(jwtCookieSameSite)
                 .build();
     }
 

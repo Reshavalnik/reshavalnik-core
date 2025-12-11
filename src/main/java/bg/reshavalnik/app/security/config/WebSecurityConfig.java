@@ -105,7 +105,7 @@ public class WebSecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         // Fallback to localhost if not provided via configuration
         if (allowedOrigins == null || allowedOrigins.isEmpty()) {
-            allowedOrigins = List.of("http://localhost:4200", "http://localhost:5173");
+            allowedOrigins = List.of("http://localhost:4200", "http://localhost:5173", "https://reshavalnik-cli.vercel.app/");
         }
         configuration.setAllowedOrigins(allowedOrigins);
         configuration.setAllowedMethods(
