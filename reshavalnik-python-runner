@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+
+# First argument: absolute path to the Python script
+SCRIPT_PATH="$1"
+shift   # remaining args (if any) go to Python as well
+
+if [ -z "$SCRIPT_PATH" ]; then
+  echo "Usage: reshavalnik-python-runner /absolute/path/to/script.py [args...]"
+  exit 1
+fi
+
+# Directory where the script is located
+SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
+
+# Run the container, mounting the script's directory at the same path
+docker run --rm \
+  -v "$SCRIPT_DIR:$SCRIPT_DIR" \
+  reshavalnik-python "$SCRIPT_PATH" "$@"

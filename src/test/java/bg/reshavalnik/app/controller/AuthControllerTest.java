@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import bg.reshavalnik.app.controller.auth.AuthController;
+import bg.reshavalnik.app.repository.user.UserRepository;
 import bg.reshavalnik.app.security.dto.request.LoginRequest;
 import bg.reshavalnik.app.security.dto.request.SignupRequest;
 import bg.reshavalnik.app.service.security.SecurityService;
@@ -27,10 +28,11 @@ class AuthControllerTest {
     private MockMvc mockMvc;
 
     @Mock private SecurityService securityService;
+    @Mock private UserRepository userRepository;
 
     @BeforeEach
     void setUp() {
-        AuthController controller = new AuthController(securityService);
+        AuthController controller = new AuthController(securityService, userRepository);
         this.mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
     }
 

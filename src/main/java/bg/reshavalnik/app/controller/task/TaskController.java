@@ -1,13 +1,15 @@
 package bg.reshavalnik.app.controller.task;
 
+import bg.reshavalnik.app.domain.enums.Grade;
+import bg.reshavalnik.app.domain.model.section.SectionModel;
 import bg.reshavalnik.app.domain.model.task.GeneratedTaskRequestModel;
-import bg.reshavalnik.app.domain.model.task.TaskRequestModel;
 import bg.reshavalnik.app.domain.model.task.TaskUpdateRequestModel;
 import bg.reshavalnik.app.security.security.services.UserDetails;
 import bg.reshavalnik.app.service.script.ScriptService;
 import bg.reshavalnik.app.service.task.TaskService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -29,17 +31,15 @@ public class TaskController {
 
     private final ObjectMapper objectMapper;
 
-    @PostMapping(
-            path = "/create",
-            consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
-            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(path = "/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> createTask(
-            @RequestPart("model") String modelJson,
-            @RequestParam("file") MultipartFile file,
+            @RequestPart("model") SectionModel model,
+            @RequestPart("file") MultipartFile file,
             @AuthenticationPrincipal UserDetails userDetails)
             throws IOException {
 
-        TaskRequestModel model = objectMapper.readValue(modelJson, TaskRequestModel.class);
+        //        SectionRequestModel model = objectMapper.readValue(modelJson,
+        // SectionRequestModel.class);
         return new ResponseEntity<>(
                 taskService.createTask(model, userDetails.getId(), file), HttpStatus.CREATED);
     }
@@ -158,5 +158,10 @@ public class TaskController {
             @AuthenticationPrincipal UserDetails userDetails) {
         return new ResponseEntity<>(
                 taskService.finishExam(examId, userDetails.getId()), HttpStatus.OK);
+    }
+
+    @GetMapping("/all-grade")
+    public ResponseEntity<?> getAllGrade() {
+        return new ResponseEntity<>(List.of(Grade.values()), HttpStatus.OK);
     }
 }

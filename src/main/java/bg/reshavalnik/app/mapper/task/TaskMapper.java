@@ -2,9 +2,12 @@ package bg.reshavalnik.app.mapper.task;
 
 import bg.reshavalnik.app.domain.entity.resultExam.ResultExam;
 import bg.reshavalnik.app.domain.entity.task.ExamTask;
+import bg.reshavalnik.app.domain.entity.task.Section;
 import bg.reshavalnik.app.domain.entity.task.Task;
 import bg.reshavalnik.app.domain.model.exam.ExamTaskExistResponseModel;
+import bg.reshavalnik.app.domain.model.section.SectionModel;
 import bg.reshavalnik.app.domain.model.task.*;
+import jakarta.validation.Valid;
 import java.util.List;
 import org.mapstruct.Mapper;
 import org.mapstruct.MappingTarget;
@@ -12,8 +15,6 @@ import org.mapstruct.ReportingPolicy;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface TaskMapper {
-
-    Task mapToTask(TaskRequestModel taskRequestModel);
 
     void updateFromDto(TaskUpdateRequestModel dto, @MappingTarget Task entity);
 
@@ -32,4 +33,6 @@ public interface TaskMapper {
     ResultExam mapToResultExam(ExamTask examTask);
 
     GeneratedTaskResponse mapToGeneratedTaskDto(GeneratedTask gt);
+
+    Section mapToSection(@Valid SectionModel model);
 }
