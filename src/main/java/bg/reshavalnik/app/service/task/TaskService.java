@@ -10,6 +10,7 @@ import bg.reshavalnik.app.domain.entity.task.Task;
 import bg.reshavalnik.app.domain.enums.Grade;
 import bg.reshavalnik.app.domain.model.exam.ExamTaskExistResponseModel;
 import bg.reshavalnik.app.domain.model.resultExam.*;
+import bg.reshavalnik.app.domain.model.section.SectionModel;
 import bg.reshavalnik.app.domain.model.task.*;
 import bg.reshavalnik.app.domain.model.task.GeneratedTask;
 import bg.reshavalnik.app.exceptions.exeption.TaskExceptions;
@@ -61,17 +62,19 @@ public class TaskService {
     private final UserRepository userRepository;
 
     public TaskResponseModel createTask(
-            @Valid TaskRequestModel model, String userId, MultipartFile file) throws IOException {
+            @Valid SectionModel model, String userId, MultipartFile file) throws IOException {
         log.info("Creating task with name: {}", model);
         taskRepository
-                .findByTaskName(model.getTaskName())
+                .findBySection_TaskName(model.getTaskName())
                 .ifPresent(
                         task -> {
                             throw new TaskExceptions(TASK_ALREADY_EXISTS);
                         });
 
         String fileId = scriptService.createTask(file);
-        Task task = taskMapper.mapToTask(model);
+        Section section = taskMapper.mapToSection(model);
+        Task task = new Task();
+        task.setSection(section);
         task.setCreatedAt(LocalDateTime.now());
         task.setOwnerId(userId);
         task.setFileId(fileId);
@@ -137,7 +140,7 @@ public class TaskService {
         log.info("Getting tasks for grade: {}", grade);
         List<Task> tasks =
                 taskRepository
-                        .findByGrade(Grade.valueOf(String.valueOf(gradeEnum)))
+                        .findBySection_Grade(Grade.valueOf(String.valueOf(gradeEnum)))
                         .orElseThrow(() -> new TaskExceptions(TASK_NOT_FOUND));
         return taskMapper.mapToTaskResponseModelList(tasks);
     }
@@ -271,11 +274,11 @@ public class TaskService {
     }
 
     public Section addSection(@NonNull String section) {
-        if (sectionRepository.existsBySection(section)) {
+        if (sectionRepository.existsBySectionName(section)) {
             throw new TaskExceptions(SECTION_ALREADY_EXISTS);
         }
         Section newSection = new Section();
-        newSection.setSection(section);
+        newSection.setSectionName(section);
         return sectionRepository.save(newSection);
     }
 
@@ -359,7 +362,7 @@ public class TaskService {
         resultExam.setUserId(userId);
         resultExam.setResult(result);
         resultExam.setUserAnswer(answer);
-        resultExam.setSectionName(examTask.getSection().getSection());
+        resultExam.setSectionName(examTask.getSection().getSectionName());
         resultExam.setExamDate(LocalDateTime.now());
         resultExamRepository.save(resultExam);
 
