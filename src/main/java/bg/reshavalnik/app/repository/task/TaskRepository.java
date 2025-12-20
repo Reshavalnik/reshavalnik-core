@@ -11,9 +11,9 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface TaskRepository extends MongoRepository<Task, String> {
 
-    Optional<Task> findBySection_TaskName(String taskName);
+    Optional<Task> findByTaskSection_TaskName(String taskName);
 
     Optional<List<Task>> findByOwnerId(String userId);
 
-    Optional<List<Task>> findBySection_Grade(@NonNull Grade grade);
+    Optional<List<Task>> findByGrade(@NonNull Grade grade);
 }

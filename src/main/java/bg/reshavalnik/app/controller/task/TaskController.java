@@ -1,8 +1,8 @@
 package bg.reshavalnik.app.controller.task;
 
 import bg.reshavalnik.app.domain.enums.Grade;
-import bg.reshavalnik.app.domain.model.section.SectionModel;
 import bg.reshavalnik.app.domain.model.task.GeneratedTaskRequestModel;
+import bg.reshavalnik.app.domain.model.task.TaskRequestModel;
 import bg.reshavalnik.app.domain.model.task.TaskUpdateRequestModel;
 import bg.reshavalnik.app.security.security.services.UserDetails;
 import bg.reshavalnik.app.service.script.ScriptService;
@@ -33,13 +33,11 @@ public class TaskController {
 
     @PostMapping(path = "/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> createTask(
-            @RequestPart("model") SectionModel model,
+            @RequestPart("model") TaskRequestModel model,
             @RequestPart("file") MultipartFile file,
             @AuthenticationPrincipal UserDetails userDetails)
             throws IOException {
 
-        //        SectionRequestModel model = objectMapper.readValue(modelJson,
-        // SectionRequestModel.class);
         return new ResponseEntity<>(
                 taskService.createTask(model, userDetails.getId(), file), HttpStatus.CREATED);
     }

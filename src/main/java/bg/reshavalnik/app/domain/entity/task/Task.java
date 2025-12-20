@@ -1,5 +1,6 @@
 package bg.reshavalnik.app.domain.entity.task;
 
+import bg.reshavalnik.app.domain.enums.Grade;
 import java.time.LocalDateTime;
 import lombok.*;
 import org.springframework.data.annotation.Id;
@@ -17,6 +18,12 @@ public class Task {
     @NonNull private String ownerId;
 
     @NonNull private Section section;
+
+    @NonNull private TaskSection taskSection;
+
+    @NonNull private Grade grade;
+
+    @NonNull private String algorithm;
 
     private LocalDateTime createdAt;
 

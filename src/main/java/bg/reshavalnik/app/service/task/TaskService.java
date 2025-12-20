@@ -7,10 +7,10 @@ import bg.reshavalnik.app.domain.entity.resultExam.ResultExam;
 import bg.reshavalnik.app.domain.entity.task.ExamTask;
 import bg.reshavalnik.app.domain.entity.task.Section;
 import bg.reshavalnik.app.domain.entity.task.Task;
+import bg.reshavalnik.app.domain.entity.task.TaskSection;
 import bg.reshavalnik.app.domain.enums.Grade;
 import bg.reshavalnik.app.domain.model.exam.ExamTaskExistResponseModel;
 import bg.reshavalnik.app.domain.model.resultExam.*;
-import bg.reshavalnik.app.domain.model.section.SectionModel;
 import bg.reshavalnik.app.domain.model.task.*;
 import bg.reshavalnik.app.domain.model.task.GeneratedTask;
 import bg.reshavalnik.app.exceptions.exeption.TaskExceptions;
@@ -19,12 +19,13 @@ import bg.reshavalnik.app.mapper.task.TaskMapper;
 import bg.reshavalnik.app.repository.ExamTaskRepository;
 import bg.reshavalnik.app.repository.pendingExam.PendingExamRepository;
 import bg.reshavalnik.app.repository.resultExam.ResultExamRepository;
-import bg.reshavalnik.app.repository.section.SectionRepository;
 import bg.reshavalnik.app.repository.task.TaskRepository;
 import bg.reshavalnik.app.repository.user.UserRepository;
 import bg.reshavalnik.app.security.domain.User;
 import bg.reshavalnik.app.security.security.services.UserDetails;
 import bg.reshavalnik.app.service.script.ScriptService;
+import bg.reshavalnik.app.service.section.SectionService;
+import bg.reshavalnik.app.service.taskSection.TaskSectionService;
 import jakarta.validation.Valid;
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -36,6 +37,7 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 @RequiredArgsConstructor
@@ -49,8 +51,6 @@ public class TaskService {
 
     private final TaskMapper taskMapper;
 
-    private final SectionRepository sectionRepository;
-
     private final ExamTaskRepository examTaskRepository;
 
     private final ResultExamRepository resultExamRepository;
@@ -61,24 +61,53 @@ public class TaskService {
 
     private final UserRepository userRepository;
 
+    private final SectionService sectionService;
+
+    private final TaskSectionService taskSectionService;
+
+    @Transactional
     public TaskResponseModel createTask(
-            @Valid SectionModel model, String userId, MultipartFile file) throws IOException {
+            @Valid TaskRequestModel model, String userId, MultipartFile file) throws IOException {
         log.info("Creating task with name: {}", model);
+
         taskRepository
-                .findBySection_TaskName(model.getTaskName())
+                .findByTaskSection_TaskName(model.getTaskSectionModel().getTaskName())
                 .ifPresent(
                         task -> {
                             throw new TaskExceptions(TASK_ALREADY_EXISTS);
                         });
 
+        Section section = sectionService.getSectionById(model.getSectionModel().getId());
+        if (section == null) {
+            section = sectionService.save(model.getSectionModel().getSectionName());
+        }
+
+        TaskSection taskSection = taskSectionService.getById(model.getTaskSectionModel().getId());
+        if (taskSection == null) {
+            taskSection = taskSectionService.save(model.getTaskSectionModel(), section.getId());
+        }
+
         String fileId = scriptService.createTask(file);
-        Section section = taskMapper.mapToSection(model);
+
+        Task task = getTask(model, userId, section, taskSection, fileId);
+        return taskMapper.mapToTaskResponseModel(taskRepository.save(task));
+    }
+
+    private static @NonNull Task getTask(
+            TaskRequestModel model,
+            String userId,
+            Section section,
+            TaskSection taskSection,
+            String fileId) {
         Task task = new Task();
+        task.setGrade(Grade.valueOf(model.getGrade().getName()));
         task.setSection(section);
+        task.setTaskSection(taskSection);
+        task.setAlgorithm(model.getAlgorithm());
         task.setCreatedAt(LocalDateTime.now());
         task.setOwnerId(userId);
         task.setFileId(fileId);
-        return taskMapper.mapToTaskResponseModel(taskRepository.save(task));
+        return task;
     }
 
     public TaskResponseModel updateTask(TaskUpdateRequestModel model, String id, MultipartFile file)
@@ -86,10 +115,32 @@ public class TaskService {
         log.info("Updating task with id: {}", id);
 
         Task task = findTaskById(model.getId());
-        taskMapper.updateFromDto(model, task);
+
         if (!task.getOwnerId().equals(id)) {
             task.setOwnerId(id);
         }
+        if (model.getGrade() != null) {
+            task.setGrade(Grade.valueOf(model.getGrade().getName()));
+        }
+        if (model.getTask() != null) {
+            TaskSection taskSection =
+                    taskSectionService.getByTaskName(model.getTask().getTaskName());
+            task.setTaskSection(taskSection);
+        }
+        if (model.getAlgorithm() != null) {
+            task.setAlgorithm(model.getAlgorithm());
+        }
+        if (model.getSection() != null) {
+            Section newSection = sectionService.findById(task.getTaskSection().getSectionId());
+            task.setSection(newSection);
+        }
+        if (model.getFileId() != null) {
+            task.setFileId(model.getFileId());
+        }
+        if (model.getImg() != null) {
+            task.setImg(model.getImg());
+        }
+
         task.setUpdatedAt(LocalDateTime.now());
         String fileId = scriptService.update(file, task.getFileId());
         task.setFileId(fileId);
@@ -140,7 +191,7 @@ public class TaskService {
         log.info("Getting tasks for grade: {}", grade);
         List<Task> tasks =
                 taskRepository
-                        .findBySection_Grade(Grade.valueOf(String.valueOf(gradeEnum)))
+                        .findByGrade(Grade.valueOf(String.valueOf(gradeEnum)))
                         .orElseThrow(() -> new TaskExceptions(TASK_NOT_FOUND));
         return taskMapper.mapToTaskResponseModelList(tasks);
     }
@@ -273,31 +324,23 @@ public class TaskService {
                 .concat(String.valueOf(index));
     }
 
-    public Section addSection(@NonNull String section) {
-        if (sectionRepository.existsBySectionName(section)) {
+    public Section addSection(@NonNull String sectionName) {
+        if (sectionService.existsBySectionName(sectionName)) {
             throw new TaskExceptions(SECTION_ALREADY_EXISTS);
         }
-        Section newSection = new Section();
-        newSection.setSectionName(section);
-        return sectionRepository.save(newSection);
+        return sectionService.save(sectionName);
     }
 
     public Section getSection(@NonNull String sectionId) {
-        return sectionRepository
-                .findById(sectionId)
-                .orElseThrow(() -> new TaskExceptions(SECTION_NOT_FOUND));
+        return sectionService.findById(sectionId);
     }
 
     public List<Section> getAllSections() {
-        return sectionRepository.findAll();
+        return sectionService.getAllSections();
     }
 
     public void deleteSection(String sectionId) {
-        Section section =
-                sectionRepository
-                        .findById(sectionId)
-                        .orElseThrow(() -> new TaskExceptions(SECTION_NOT_FOUND));
-        sectionRepository.delete(section);
+        sectionService.delete(sectionId);
     }
 
     private static int findFirst(Pattern p, String s) {
