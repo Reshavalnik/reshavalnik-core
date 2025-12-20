@@ -10,13 +10,10 @@ import bg.reshavalnik.app.domain.model.task.*;
 import jakarta.validation.Valid;
 import java.util.List;
 import org.mapstruct.Mapper;
-import org.mapstruct.MappingTarget;
 import org.mapstruct.ReportingPolicy;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface TaskMapper {
-
-    void updateFromDto(TaskUpdateRequestModel dto, @MappingTarget Task entity);
 
     TaskResponseModel mapToTaskResponseModel(Task task);
 

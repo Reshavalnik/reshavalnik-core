@@ -1,7 +1,8 @@
 package bg.reshavalnik.app.domain.model.task;
 
-import bg.reshavalnik.app.domain.entity.task.Section;
 import bg.reshavalnik.app.domain.enums.Grade;
+import bg.reshavalnik.app.domain.model.section.SectionModel;
+import bg.reshavalnik.app.domain.model.taskSection.TaskSectionModel;
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -20,11 +21,11 @@ public class TaskUpdateRequestModel {
 
     private Grade grade;
 
-    private String taskName;
+    private TaskSectionModel task;
 
     private String algorithm;
 
-    private Section section;
+    private SectionModel section;
 
     private LocalDateTime createdAt;
 

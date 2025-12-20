@@ -9,10 +9,12 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @AllArgsConstructor
 @EqualsAndHashCode
 @ToString
-@Document(collection = "section")
-public class Section {
+@Document(collection = "taskSection")
+public class TaskSection {
 
     @Id private String id;
 
-    private String sectionName;
+    private String taskName;
+
+    private String sectionId;
 }

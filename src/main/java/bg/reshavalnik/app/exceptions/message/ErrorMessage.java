@@ -25,5 +25,8 @@ public class ErrorMessage {
 
     // Section
     public static final String SECTION_ALREADY_EXISTS = "Section already exists";
-    public static final String SECTION_NOT_FOUND = "Section not found!";
+    public static final String SECTION_NOT_FOUND = "Section not found";
+
+    // TaskSection
+    public static final String TASK_SECTION_NOT_FOUND = "TaskSection not found";
 }
