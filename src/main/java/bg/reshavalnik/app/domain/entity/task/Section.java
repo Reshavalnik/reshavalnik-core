@@ -1,5 +1,6 @@
 package bg.reshavalnik.app.domain.entity.task;
 
+import bg.reshavalnik.app.domain.enums.Grade;
 import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -15,4 +16,6 @@ public class Section {
     @Id private String id;
 
     private String sectionName;
+
+    private Grade grade;
 }

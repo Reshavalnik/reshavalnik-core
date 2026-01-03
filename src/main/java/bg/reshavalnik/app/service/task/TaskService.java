@@ -79,7 +79,8 @@ public class TaskService {
 
         Section section = sectionService.getSectionById(model.getSectionModel().getId());
         if (section == null) {
-            section = sectionService.save(model.getSectionModel().getSectionName());
+            section =
+                    sectionService.save(model.getSectionModel().getSectionName(), model.getGrade());
         }
 
         TaskSection taskSection = taskSectionService.getById(model.getTaskSectionModel().getId());
@@ -212,7 +213,7 @@ public class TaskService {
                 String userId =
                         requestModel.getStudents().size() == generatedResultTask.size()
                                 ? requestModel.getStudents().get(i)
-                                : requestModel.getStudents().getFirst();
+                                : userDetails.getId();
                 generatedTasks.add(
                         mapGeneratedTaskToTask(
                                 generatedResultTask.get(i),
@@ -324,19 +325,19 @@ public class TaskService {
                 .concat(String.valueOf(index));
     }
 
-    public Section addSection(@NonNull String sectionName) {
+    public Section addSection(@NonNull String sectionName, Grade grade) {
         if (sectionService.existsBySectionName(sectionName)) {
             throw new TaskExceptions(SECTION_ALREADY_EXISTS);
         }
-        return sectionService.save(sectionName);
+        return sectionService.save(sectionName, grade);
     }
 
     public Section getSection(@NonNull String sectionId) {
         return sectionService.findById(sectionId);
     }
 
-    public List<Section> getAllSections() {
-        return sectionService.getAllSections();
+    public List<Section> getAllSections(Grade grade) {
+        return sectionService.getAllSections(grade);
     }
 
     public void deleteSection(String sectionId) {
@@ -507,5 +508,11 @@ public class TaskService {
         uncompletedUsers.setLastName(user.getLastName());
 
         finishExamResult.getUncompletedUserDtos().add(uncompletedUsers);
+    }
+
+    public List<Task> getTaskBySection(String sectionId) {
+        return taskRepository
+                .findAllBySection_Id(sectionId)
+                .orElseThrow(() -> new TaskExceptions(TASK_NOT_FOUND));
     }
 }

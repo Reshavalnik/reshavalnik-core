@@ -16,4 +16,6 @@ public interface TaskRepository extends MongoRepository<Task, String> {
     Optional<List<Task>> findByOwnerId(String userId);
 
     Optional<List<Task>> findByGrade(@NonNull Grade grade);
+
+    Optional<List<Task>> findAllBySection_Id(String sectionId);
 }

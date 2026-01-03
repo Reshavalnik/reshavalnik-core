@@ -70,6 +70,11 @@ public class TaskController {
         return new ResponseEntity<>(taskService.getTaskById(taskId), HttpStatus.OK);
     }
 
+    @GetMapping("/get-by-section")
+    public ResponseEntity<?> getTaskBySection(@RequestParam("sectionId") String sectionId) {
+        return new ResponseEntity<>(taskService.getTaskBySection(sectionId), HttpStatus.OK);
+    }
+
     @GetMapping("/get-by-user")
     public ResponseEntity<?> getTasksByUser(@RequestParam("user-id") String userId) {
         return new ResponseEntity<>(taskService.getTasksByUser(userId), HttpStatus.OK);
@@ -108,8 +113,9 @@ public class TaskController {
     }
 
     @PostMapping("/add-section")
-    public ResponseEntity<?> addSection(@RequestParam("section") String section) {
-        return ResponseEntity.ok(taskService.addSection(section));
+    public ResponseEntity<?> addSection(
+            @RequestParam("section") String section, @RequestParam("grade") Grade grade) {
+        return ResponseEntity.ok(taskService.addSection(section, grade));
     }
 
     @PostMapping("/get-section")
@@ -118,8 +124,8 @@ public class TaskController {
     }
 
     @GetMapping("/get-all-sections")
-    public ResponseEntity<?> getAllSections() {
-        return ResponseEntity.ok(taskService.getAllSections());
+    public ResponseEntity<?> getAllSections(@RequestParam("grade") Grade grade) {
+        return ResponseEntity.ok(taskService.getAllSections(grade));
     }
 
     @DeleteMapping("/delete-section")

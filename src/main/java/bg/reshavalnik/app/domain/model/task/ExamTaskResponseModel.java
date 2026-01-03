@@ -10,6 +10,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class ExamTaskResponseModel {
+    private String id;
     private Grade grade;
     private TaskSectionModel taskSection;
     private SectionModel section;

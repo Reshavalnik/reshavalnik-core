@@ -3,6 +3,7 @@ package bg.reshavalnik.app.service.section;
 import static bg.reshavalnik.app.exceptions.message.ErrorMessage.SECTION_NOT_FOUND;
 
 import bg.reshavalnik.app.domain.entity.task.Section;
+import bg.reshavalnik.app.domain.enums.Grade;
 import bg.reshavalnik.app.exceptions.exeption.TaskExceptions;
 import bg.reshavalnik.app.repository.section.SectionRepository;
 import java.util.List;
@@ -17,9 +18,10 @@ public class SectionService {
 
     private final SectionRepository sectionRepository;
 
-    public Section save(String sectionName) {
+    public Section save(String sectionName, Grade grade) {
         Section section = new Section();
         section.setSectionName(sectionName);
+        section.setGrade(grade);
         return sectionRepository.save(section);
     }
 
@@ -37,8 +39,8 @@ public class SectionService {
                 .orElseThrow(() -> new TaskExceptions(SECTION_NOT_FOUND));
     }
 
-    public List<Section> getAllSections() {
-        return sectionRepository.findAll();
+    public List<Section> getAllSections(Grade grade) {
+        return sectionRepository.findAllByGrade(grade);
     }
 
     public void delete(String sectionId) {
