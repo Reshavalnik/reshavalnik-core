@@ -7,13 +7,16 @@ import bg.reshavalnik.app.security.dto.request.LoginRequest;
 import bg.reshavalnik.app.security.dto.request.SignupRequest;
 import bg.reshavalnik.app.security.dto.response.AuthResponse;
 import bg.reshavalnik.app.security.dto.response.UserProfile;
+import bg.reshavalnik.app.security.security.services.UserDetails;
 import bg.reshavalnik.app.service.security.SecurityService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -67,15 +70,33 @@ public class AuthController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<UserProfile> me() {
+    public ResponseEntity<UserProfile> me(@AuthenticationPrincipal UserDetails userDetails) {
+        if (userDetails == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
         return ResponseEntity.ok(getCurrentUserProfile());
     }
 
     // Dev helper endpoint for quickly testing logged-in user
-    @GetMapping("/dev/me")
-    public ResponseEntity<UserProfile> devMe() {
-        return me();
-    }
+    //    @GetMapping("/dev/me")
+    //    public ResponseEntity<UserProfile> devMe() {
+    //        return me();
+    //    }
+
+    //    @PostMapping("/logout")
+    //    public ResponseEntity<Void> logout(HttpServletResponse response) {
+    //
+    //        Cookie cookie = new Cookie("AUTH_TOKEN", null);
+    //        cookie.setHttpOnly(true);
+    //        cookie.setSecure(true); // if it's using HTTPS
+    //        cookie.setPath("/");
+    //        cookie.setMaxAge(0);
+    //
+    //        response.addCookie(cookie);
+    //
+    //        return ResponseEntity.ok().build();
+    //    }
 
     private UserProfile getCurrentUserProfile() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
