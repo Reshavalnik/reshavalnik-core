@@ -14,6 +14,7 @@ import bg.reshavalnik.app.security.security.services.UserDetails;
 import bg.reshavalnik.app.security.security.services.UserDetailsService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseCookie;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -58,20 +59,38 @@ public class SecurityService {
     }
 
     @Transactional
-    public ResponseCookie saveRegisterUser(@Valid SignupRequest signUpRequest) {
+    public ResponseCookie saveRegisterTeacher(SignupRequest signUpRequest) {
         if (userRepository.existsByUsername(signUpRequest.getUsername())) {
             throw new IllegalArgumentException(USERNAME_IS_ALREADY_TAKEN);
         }
 
-        String rawPassword = signUpRequest.getPassword();
-        signUpRequest.setPassword(encoder.encode(rawPassword));
-        User user = userMapper.mapToUser(signUpRequest);
-        if (user.getEmail() == null || user.getEmail().isBlank()) {
-            user.setEmail(signUpRequest.getEmail());
+        return save(signUpRequest, Role.TEACHER);
+    }
+
+    @Transactional
+    public ResponseCookie saveRegisterStudent(SignupRequest signUpRequest) {
+        if (userRepository.existsByUsername(signUpRequest.getUsername())) {
+            throw new IllegalArgumentException(USERNAME_IS_ALREADY_TAKEN);
         }
-        user.setRoles(Role.USER);
+
+        return save(signUpRequest, Role.STUDENT);
+    }
+
+    @NonNull
+    private ResponseCookie save(SignupRequest signUpRequest, Role role) {
+        String rawPassword = signUpRequest.getPassword();
+
+        User user = userMapper.mapToUser(signUpRequest);
+        user.setPassword(encoder.encode(rawPassword)); // <-- тук
+
+        user.setRole(role);
         userRepository.save(user);
 
+        String token = getToken(signUpRequest, rawPassword, role);
+        return buildJwt(token);
+    }
+
+    private String getToken(SignupRequest signUpRequest, String rawPassword, Role role) {
         Authentication authentication =
                 authenticationManager.authenticate(
                         new UsernamePasswordAuthenticationToken(
@@ -79,8 +98,7 @@ public class SecurityService {
         SecurityContextHolder.getContext().setAuthentication(authentication);
         String token = jwtUtils.generateJwtToken(authentication);
         log.info("User {} registered successfully", signUpRequest.getUsername());
-
-        return buildJwt(token);
+        return token;
     }
 
     private ResponseCookie buildJwt(String token) {

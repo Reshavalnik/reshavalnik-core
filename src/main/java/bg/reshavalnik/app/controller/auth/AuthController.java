@@ -11,6 +11,7 @@ import bg.reshavalnik.app.service.security.SecurityService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -38,11 +39,21 @@ public class AuthController {
                 .body(AuthResponse.builder().tokenType("Bearer").user(profile).build());
     }
 
-    @PostMapping("/signup")
-    public ResponseEntity<AuthResponse> registerUser(
+    @PostMapping("/signup-student")
+    public ResponseEntity<AuthResponse> registerStudent(
             @Valid @RequestBody SignupRequest signUpRequest) {
-        var cookie = securityService.saveRegisterUser(signUpRequest);
-        var profile = getCurrentUserProfile();
+        ResponseCookie cookie = securityService.saveRegisterStudent(signUpRequest);
+        UserProfile profile = getCurrentUserProfile();
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, cookie.toString())
+                .body(AuthResponse.builder().tokenType("Bearer").user(profile).build());
+    }
+
+    @PostMapping("/signup-teacher")
+    public ResponseEntity<AuthResponse> registerTeacher(
+            @Valid @RequestBody SignupRequest signUpRequest) {
+        ResponseCookie cookie = securityService.saveRegisterTeacher(signUpRequest);
+        UserProfile profile = getCurrentUserProfile();
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, cookie.toString())
                 .body(AuthResponse.builder().tokenType("Bearer").user(profile).build());
@@ -78,7 +89,7 @@ public class AuthController {
                 .email(user.getEmail())
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
-                .roles(user.getRoles())
+                .roles(user.getRole())
                 .build();
     }
 }

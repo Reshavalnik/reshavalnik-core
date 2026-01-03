@@ -50,7 +50,7 @@ public class SocialAuthController {
                         .email(result.getUser().getEmail())
                         .firstName(result.getUser().getFirstName())
                         .lastName(result.getUser().getLastName())
-                        .roles(result.getUser().getRoles())
+                        .roles(result.getUser().getRole())
                         .build();
 
         ResponseEntity.BodyBuilder resp =

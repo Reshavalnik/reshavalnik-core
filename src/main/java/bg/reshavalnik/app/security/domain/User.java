@@ -1,6 +1,5 @@
 package bg.reshavalnik.app.security.domain;
 
-import bg.reshavalnik.app.anotation.ValidPassword;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -24,7 +23,7 @@ public class User {
     @Size(max = 50)
     private String username;
 
-    @NotBlank @ValidPassword private String password;
+    @NotBlank private String password;
 
     private String firstName;
 
@@ -37,5 +36,5 @@ public class User {
 
     private String phone;
 
-    private Role roles;
+    private Role role;
 }

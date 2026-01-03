@@ -1,7 +1,6 @@
 package bg.reshavalnik.app.security.dto.request;
 
 import bg.reshavalnik.app.anotation.ValidPassword;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -19,18 +18,19 @@ public abstract class BaseSignup {
 
     @NotBlank
     @Size(max = 60)
-    @JsonProperty(required = true)
     String username;
 
     @NotBlank
     @Email
     @Size(max = 100)
-    @JsonProperty(required = true)
     String email;
 
+    @Size(
+            min = 6,
+            max = 40,
+            message = "Password cannot be less than 6 characters amd more then 40 characters")
     @NotBlank
     @ValidPassword
-    @JsonProperty(required = true)
     String password;
 
     @Size(max = 10)

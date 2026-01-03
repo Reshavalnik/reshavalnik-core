@@ -3,6 +3,7 @@ package bg.reshavalnik.app.controller;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -38,12 +39,12 @@ public class GlobalExceptionHandler {
         return badRequest("Unable to validate social token");
     }
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, Object>> handleValidation(
-            MethodArgumentNotValidException ex, HttpServletRequest request) {
-        log.warn("Validation failed at {}: {}", request.getRequestURI(), ex.getMessage());
-        return badRequest("Validation failed");
-    }
+    //    @ExceptionHandler(MethodArgumentNotValidException.class)
+    //    public ResponseEntity<Map<String, Object>> handleValidation(
+    //            MethodArgumentNotValidException ex, HttpServletRequest request) {
+    //        log.warn("Validation failed at {}: {}", request.getRequestURI(), ex.getMessage());
+    //        return badRequest("Validation failed");
+    //    }
 
     private ResponseEntity<Map<String, Object>> badRequest(String message) {
         Map<String, Object> body = new HashMap<>();
@@ -52,5 +53,15 @@ public class GlobalExceptionHandler {
         body.put("error", "Bad Request");
         body.put("message", message);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<Map<String, String>> handleValidation(
+            MethodArgumentNotValidException ex) {
+        Map<String, String> errors = new LinkedHashMap<>();
+        ex.getBindingResult()
+                .getFieldErrors()
+                .forEach(e -> errors.put(e.getField(), e.getDefaultMessage()));
+        return ResponseEntity.badRequest().body(errors);
     }
 }
