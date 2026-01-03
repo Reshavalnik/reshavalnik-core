@@ -128,7 +128,7 @@ public class SocialAuthService {
                             // Set a strong random password that meets policy, though it won't be
                             // used for social login
                             u.setPassword(generateStrongPassword());
-                            u.setRole(Role.USER);
+                            u.setRoles(Role.STUDENT);
                             return userRepository.save(u);
                         });
 

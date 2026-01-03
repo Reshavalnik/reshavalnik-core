@@ -36,5 +36,5 @@ public class User {
 
     private String phone;
 
-    private Role role;
+    private Role roles;
 }

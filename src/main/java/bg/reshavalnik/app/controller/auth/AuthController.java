@@ -32,8 +32,8 @@ public class AuthController {
     @PostMapping("/signin")
     public ResponseEntity<AuthResponse> authenticateUser(
             @Valid @RequestBody LoginRequest loginRequest) {
-        var cookie = securityService.getAuthenticateUser(loginRequest);
-        var profile = getCurrentUserProfile();
+        ResponseCookie cookie = securityService.getAuthenticateUser(loginRequest);
+        UserProfile profile = getCurrentUserProfile();
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, cookie.toString())
                 .body(AuthResponse.builder().tokenType("Bearer").user(profile).build());
@@ -89,7 +89,7 @@ public class AuthController {
                 .email(user.getEmail())
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
-                .roles(user.getRole())
+                .roles(user.getRoles())
                 .build();
     }
 }

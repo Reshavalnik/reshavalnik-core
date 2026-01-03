@@ -83,7 +83,7 @@ public class SecurityService {
         User user = userMapper.mapToUser(signUpRequest);
         user.setPassword(encoder.encode(rawPassword)); // <-- тук
 
-        user.setRole(role);
+        user.setRoles(role);
         userRepository.save(user);
 
         String token = getToken(signUpRequest, rawPassword, role);
