@@ -10,6 +10,6 @@ public class GeneratedTaskResponse {
     private String id;
     private String userId;
     private String task;
-    private Map<String, String> options;
+    private Map<String, Object> options;
     private String hint;
 }

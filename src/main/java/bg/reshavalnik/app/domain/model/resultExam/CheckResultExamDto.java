@@ -8,7 +8,7 @@ import lombok.Setter;
 @Setter
 public class CheckResultExamDto {
     private String task;
-    private Map<String, String> options;
+    private Map<String, Object> options;
     private String answer;
     private String hint;
     private String solution;

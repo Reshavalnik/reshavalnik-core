@@ -44,14 +44,23 @@ public class ScriptService {
 
     /** Writes a Python file to GridFS and returns the generated ID. */
     public String createTask(MultipartFile file) throws IOException {
-        log.info("Creating file with name: {}", file.getOriginalFilename());
+        String filename = file.getOriginalFilename();
+        if (filename == null || filename.isBlank()) {
+            filename = "script-" + System.currentTimeMillis() + ".py";
+        }
+        log.info(
+                "Creating script file: name={}, contentType={}, size={} bytes",
+                filename,
+                file.getContentType(),
+                file.getSize());
         return gridFs.store(
-                        file.getInputStream(), file.getOriginalFilename(), file.getContentType())
+                        file.getInputStream(), filename, file.getContentType())
                 .toString();
     }
 
     /** Writes and remove old Python file to GridFS and returns the generated ID. */
     public String update(MultipartFile file, String fileId) throws IOException {
+        log.info("Updating script file: oldId={}, newSize={} bytes", fileId, file.getSize());
         gridFs.delete(new Query(Criteria.where("_id").is(fileId)));
         return createTask(file);
     }
@@ -60,16 +69,20 @@ public class ScriptService {
 
     /** 1) Downloads a file from GridFS ONCE and returns the Path to the temporary .py */
     private Path prepareScript(String id) throws IOException {
+        log.info("Preparing script from GridFS: id={}", id);
         GridFSFile gridFile = gridFs.findOne(Query.query(Criteria.where("_id").is(id)));
         if (gridFile == null) {
+            log.warn("Script not found in GridFS: id={}", id);
             throw new FileNotFoundException(FILE_NOT_FOUND + id);
         }
+        log.info("GridFS script length: {} bytes", gridFile.getLength());
         GridFsResource resource = gridFs.getResource(gridFile);
 
         Path dir = Path.of(tempFilePath);
         Files.createDirectories(dir);
 
         Path tempPath = Files.createTempFile(dir, "script-", ".py");
+        log.info("Writing script to temp path: {}", tempPath.toAbsolutePath());
         try (InputStream in = resource.getInputStream();
                 OutputStream out = Files.newOutputStream(tempPath)) {
             StreamUtils.copy(in, out);

@@ -2,6 +2,11 @@ FROM python:3.12-slim
 
 RUN mkdir -p 'C:/latex/im_21'
 
+# Font support for PIL ImageFont.truetype
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends fonts-dejavu-core fontconfig libfreetype6 \
+    && rm -rf /var/lib/apt/lists/*
+
 # Install your script deps here
 RUN pip install --no-cache-dir pillow
 

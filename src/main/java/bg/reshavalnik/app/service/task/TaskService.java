@@ -26,13 +26,12 @@ import bg.reshavalnik.app.security.security.services.UserDetails;
 import bg.reshavalnik.app.service.script.ScriptService;
 import bg.reshavalnik.app.service.section.SectionService;
 import bg.reshavalnik.app.service.taskSection.TaskSectionService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Valid;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -64,6 +63,8 @@ public class TaskService {
     private final SectionService sectionService;
 
     private final TaskSectionService taskSectionService;
+
+    private final ObjectMapper objectMapper;
 
     @Transactional
     public TaskResponseModel createTask(
@@ -244,69 +245,20 @@ public class TaskService {
             String timestamp,
             String generatedByUserId) {
 
-        // 0) normalize + drop leading "Exit code: N"
-        String cleaned =
-                generatedTask == null
-                        ? ""
-                        : generatedTask
-                                .replaceFirst("(?s)^\\s*Exit\\s*code\\s*:\\s*\\d+\\s*", "")
-                                .replace("\r\n", "\n")
-                                .replace('\u00A0', ' ')
-                                .trim();
-
-        // 1) stable anchors
-        Pattern patternOptionStart = Pattern.compile("(?m)^\\s*[AА]\\)");
-        Pattern patternAnswerLabel =
-                Pattern.compile("Отг(?:овор)?\\s*[:\\-]?", Pattern.UNICODE_CASE);
-        Pattern patternHintLabel =
-                Pattern.compile("Уп[ъу]тван(?:е|ия)\\s*[:\\-]?", Pattern.UNICODE_CASE);
-        Pattern patternSolutionLabel = Pattern.compile("Решение\\s*[:\\-]?", Pattern.UNICODE_CASE);
-        Pattern patternAnswerValue =
-                Pattern.compile(
-                        "Отг(?:овор)?\\s*[:\\-]?\\s*([A-Za-zА-Яа-я])", Pattern.UNICODE_CASE);
-
-        int idxOptionStart = findFirst(patternOptionStart, cleaned);
-        int idxAnswerLabel = findFirst(patternAnswerLabel, cleaned);
-        int idxHintLabel = findFirst(patternHintLabel, cleaned);
-        int idxSolutionLabel = findFirst(patternSolutionLabel, cleaned);
-
-        if (idxOptionStart < 0 || idxAnswerLabel < 0 || idxHintLabel < 0 || idxSolutionLabel < 0) {
+        ScriptTaskPayload payload = parseTaskPayload(objectMapper, generatedTask);
+        if (payload == null) {
+            log.warn("Failed to parse generated task JSON payload.");
             return null;
-        }
-
-        // 2) label lengths to trim them away
-        int lenAnswerLabel = matchedLenAt(patternAnswerLabel, cleaned, idxAnswerLabel);
-        int lenHintLabel = matchedLenAt(patternHintLabel, cleaned, idxHintLabel);
-        int lenSolutionLabel = matchedLenAt(patternSolutionLabel, cleaned, idxSolutionLabel);
-
-        // 3) split sections
-        String taskText = cleaned.substring(0, idxOptionStart).trim();
-        String optionsBlock = cleaned.substring(idxOptionStart, idxAnswerLabel).trim();
-        String hintText = cleaned.substring(idxHintLabel + lenHintLabel, idxSolutionLabel).trim();
-        String solutionText = cleaned.substring(idxSolutionLabel + lenSolutionLabel).trim();
-
-        // 4) pick the answer letter
-        Matcher mAns = patternAnswerValue.matcher(cleaned.substring(idxAnswerLabel));
-        String answerLetter = mAns.find() ? mAns.group(1).trim() : "";
-
-        // 5) parse options -> LinkedHashMap<letter, text>
-        Pattern patternOptionLine = Pattern.compile("(?m)^\\s*([AАБВГ])\\)\\s*(.+?)\\s*$");
-        Matcher mo = patternOptionLine.matcher(optionsBlock);
-        java.util.LinkedHashMap<String, String> optionsMap = new java.util.LinkedHashMap<>();
-        while (mo.find()) {
-            String key = mo.group(1);
-            if ("A".equalsIgnoreCase(key)) key = "А"; // normalize latin 'A' -> cyrillic 'А'
-            String value = mo.group(2).trim();
-            optionsMap.put(key, value);
         }
 
         // 6) build result
         GeneratedTask gt = new GeneratedTask();
-        gt.setTask(taskText);
-        gt.setOptions(optionsMap);
-        gt.setAnswer(answerLetter);
-        gt.setHint(hintText);
-        gt.setSolution(solutionText);
+        gt.setTask(payload.task);
+        gt.setOptions(payload.options);
+        gt.setAnswer(payload.answer);
+        gt.setHint(payload.hint);
+        gt.setSolution(payload.solution);
+        gt.setImageBase64(payload.imageBase64);
         gt.setUserId(userId);
         gt.setId(generateId(generatedByUserId, userId, timestamp, index));
 
@@ -344,14 +296,38 @@ public class TaskService {
         sectionService.delete(sectionId);
     }
 
-    private static int findFirst(Pattern p, String s) {
-        Matcher m = p.matcher(s);
-        return m.find() ? m.start() : -1;
+    static ScriptTaskPayload parseTaskPayload(ObjectMapper mapper, String output) {
+        String cleaned =
+                output == null
+                        ? ""
+                        : output
+                                .replaceFirst("(?s)^\\s*Exit\\s*code\\s*:\\s*\\d+\\s*", "")
+                                .replace("\r\n", "\n")
+                                .replace('\u00A0', ' ')
+                                .trim();
+        if (cleaned.isEmpty()) {
+            return null;
+        }
+        String[] lines = cleaned.split("\n");
+        for (int i = lines.length - 1; i >= 0; i--) {
+            String line = lines[i].trim();
+            if (line.startsWith("{") && line.endsWith("}")) {
+                try {
+                    return mapper.readValue(line, ScriptTaskPayload.class);
+                } catch (IOException ignore) {
+                }
+            }
+        }
+        return null;
     }
 
-    private static int matchedLenAt(Pattern p, String s, int start) {
-        Matcher m = p.matcher(s);
-        return (start >= 0 && m.find(start) && m.start() == start) ? (m.end() - m.start()) : 0;
+    static class ScriptTaskPayload {
+        public String task;
+        public java.util.Map<String, Object> options;
+        public String answer;
+        public String hint;
+        public String solution;
+        public String imageBase64;
     }
 
     private List<Task> getAllTaskByOwnerId(String userId) {
