@@ -302,8 +302,7 @@ public class TaskService {
         String cleaned =
                 output == null
                         ? ""
-                        : output
-                                .replaceFirst("(?s)^\\s*Exit\\s*code\\s*:\\s*\\d+\\s*", "")
+                        : output.replaceFirst("(?s)^\\s*Exit\\s*code\\s*:\\s*\\d+\\s*", "")
                                 .replace("\r\n", "\n")
                                 .replace('\u00A0', ' ')
                                 .trim();
@@ -323,8 +322,7 @@ public class TaskService {
         return null;
     }
 
-    private static List<ImageDto> normalizeImages(
-            List<ImageDto> images, String imageBase64) {
+    private static List<ImageDto> normalizeImages(List<ImageDto> images, String imageBase64) {
         if (images != null && !images.isEmpty()) {
             return images;
         }

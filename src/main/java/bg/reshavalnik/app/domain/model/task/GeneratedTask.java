@@ -1,7 +1,7 @@
 package bg.reshavalnik.app.domain.model.task;
 
-import java.util.Map;
 import java.util.List;
+import java.util.Map;
 import lombok.*;
 
 @Getter

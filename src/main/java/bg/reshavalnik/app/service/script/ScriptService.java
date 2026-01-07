@@ -53,9 +53,7 @@ public class ScriptService {
                 filename,
                 file.getContentType(),
                 file.getSize());
-        return gridFs.store(
-                        file.getInputStream(), filename, file.getContentType())
-                .toString();
+        return gridFs.store(file.getInputStream(), filename, file.getContentType()).toString();
     }
 
     /** Writes and remove old Python file to GridFS and returns the generated ID. */
