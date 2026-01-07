@@ -13,6 +13,7 @@ import bg.reshavalnik.app.domain.model.exam.ExamTaskExistResponseModel;
 import bg.reshavalnik.app.domain.model.resultExam.*;
 import bg.reshavalnik.app.domain.model.task.*;
 import bg.reshavalnik.app.domain.model.task.GeneratedTask;
+import bg.reshavalnik.app.domain.model.task.ImageDto;
 import bg.reshavalnik.app.exceptions.exeption.TaskExceptions;
 import bg.reshavalnik.app.mapper.resultExam.ResultExamMapper;
 import bg.reshavalnik.app.mapper.task.TaskMapper;
@@ -259,6 +260,7 @@ public class TaskService {
         gt.setHint(payload.hint);
         gt.setSolution(payload.solution);
         gt.setImageBase64(payload.imageBase64);
+        gt.setImages(normalizeImages(payload.images, payload.imageBase64));
         gt.setUserId(userId);
         gt.setId(generateId(generatedByUserId, userId, timestamp, index));
 
@@ -321,6 +323,21 @@ public class TaskService {
         return null;
     }
 
+    private static List<ImageDto> normalizeImages(
+            List<ImageDto> images, String imageBase64) {
+        if (images != null && !images.isEmpty()) {
+            return images;
+        }
+        if (imageBase64 == null || imageBase64.isBlank()) {
+            return java.util.Collections.emptyList();
+        }
+        ImageDto image = new ImageDto();
+        image.setKind("TASK");
+        image.setMime("image/png");
+        image.setBase64(imageBase64);
+        return java.util.List.of(image);
+    }
+
     static class ScriptTaskPayload {
         public String task;
         public java.util.Map<String, Object> options;
@@ -328,6 +345,7 @@ public class TaskService {
         public String hint;
         public String solution;
         public String imageBase64;
+        public java.util.List<ImageDto> images;
     }
 
     private List<Task> getAllTaskByOwnerId(String userId) {
@@ -392,6 +410,8 @@ public class TaskService {
         checkResultExamDto.setAnswer(generatedTask.getAnswer());
         checkResultExamDto.setHint(generatedTask.getHint());
         checkResultExamDto.setSolution(generatedTask.getSolution());
+        checkResultExamDto.setImageBase64(generatedTask.getImageBase64());
+        checkResultExamDto.setImages(generatedTask.getImages());
         checkResultExamDto.setResult(result);
 
         removePendingExam(examId, userId);

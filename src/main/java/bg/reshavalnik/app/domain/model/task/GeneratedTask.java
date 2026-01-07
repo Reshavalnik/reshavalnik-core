@@ -1,6 +1,7 @@
 package bg.reshavalnik.app.domain.model.task;
 
 import java.util.Map;
+import java.util.List;
 import lombok.*;
 
 @Getter
@@ -14,4 +15,5 @@ public class GeneratedTask {
     private String hint;
     private String solution;
     private String imageBase64;
+    private List<ImageDto> images;
 }
