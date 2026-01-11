@@ -79,13 +79,9 @@ public class TaskService {
                             throw new TaskExceptions(TASK_ALREADY_EXISTS);
                         });
 
-        Section section = sectionService.getSectionById(model.getSectionModel().getId());
-        if (section == null) {
-            section =
-                    sectionService.save(model.getSectionModel().getSectionName(), model.getGrade());
-        }
+      Section section = getSection(model);
 
-        TaskSection taskSection = taskSectionService.getById(model.getTaskSectionModel().getId());
+      TaskSection taskSection = taskSectionService.getById(model.getTaskSectionModel().getId());
         if (taskSection == null) {
             taskSection = taskSectionService.save(model.getTaskSectionModel(), section.getId());
         }
@@ -96,7 +92,17 @@ public class TaskService {
         return taskMapper.mapToTaskResponseModel(taskRepository.save(task));
     }
 
-    private static @NonNull Task getTask(
+  private Section getSection(TaskRequestModel model) {
+    Section section = sectionService.findBySectionName(model.getSectionModel().getSectionName());
+
+    if (section == null) {
+        section =
+                sectionService.save(model.getSectionModel().getSectionName(), model.getGrade());
+    }
+    return section;
+  }
+
+  private static @NonNull Task getTask(
             TaskRequestModel model,
             String userId,
             Section section,

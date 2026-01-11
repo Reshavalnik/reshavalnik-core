@@ -7,6 +7,8 @@ import bg.reshavalnik.app.domain.enums.Grade;
 import bg.reshavalnik.app.exceptions.exeption.TaskExceptions;
 import bg.reshavalnik.app.repository.section.SectionRepository;
 import java.util.List;
+
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -50,4 +52,8 @@ public class SectionService {
                         .orElseThrow(() -> new TaskExceptions(SECTION_NOT_FOUND));
         sectionRepository.delete(section);
     }
+
+  public Section findBySectionName(@NonNull String sectionName) {
+      return sectionRepository.findBySectionName(sectionName);
+  }
 }

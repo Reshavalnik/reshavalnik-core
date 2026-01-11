@@ -3,6 +3,8 @@ package bg.reshavalnik.app.repository.section;
 import bg.reshavalnik.app.domain.entity.task.Section;
 import bg.reshavalnik.app.domain.enums.Grade;
 import java.util.List;
+
+import lombok.NonNull;
 import org.springframework.data.mongodb.repository.MongoRepository;
 
 public interface SectionRepository extends MongoRepository<Section, String> {
@@ -12,4 +14,6 @@ public interface SectionRepository extends MongoRepository<Section, String> {
     Section getById(String sectionId);
 
     List<Section> findAllByGrade(Grade grade);
+
+    Section findBySectionName(@NonNull String sectionName);
 }
