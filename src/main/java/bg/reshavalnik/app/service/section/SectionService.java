@@ -7,7 +7,6 @@ import bg.reshavalnik.app.domain.enums.Grade;
 import bg.reshavalnik.app.exceptions.exeption.TaskExceptions;
 import bg.reshavalnik.app.repository.section.SectionRepository;
 import java.util.List;
-
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -53,7 +52,7 @@ public class SectionService {
         sectionRepository.delete(section);
     }
 
-  public Section findBySectionName(@NonNull String sectionName) {
-      return sectionRepository.findBySectionName(sectionName);
-  }
+    public Section findBySectionName(@NonNull String sectionName) {
+        return sectionRepository.findBySectionName(sectionName);
+    }
 }

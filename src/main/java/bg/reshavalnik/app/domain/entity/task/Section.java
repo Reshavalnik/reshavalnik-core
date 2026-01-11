@@ -16,8 +16,7 @@ public class Section {
 
     @Id private String id;
 
-    @UniqueElements
-    private String sectionName;
+    @UniqueElements private String sectionName;
 
     private Grade grade;
 }

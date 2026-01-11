@@ -3,7 +3,6 @@ package bg.reshavalnik.app.repository.section;
 import bg.reshavalnik.app.domain.entity.task.Section;
 import bg.reshavalnik.app.domain.enums.Grade;
 import java.util.List;
-
 import lombok.NonNull;
 import org.springframework.data.mongodb.repository.MongoRepository;
 

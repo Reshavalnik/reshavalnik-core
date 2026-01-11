@@ -22,14 +22,15 @@ def load_font(size):
             return ImageFont.load_default()
 
 
-def encode_png_base64(path):
-    if not path:
-        return None
+def to_data_uri(path_value):
+    if not path_value:
+        return ""
     try:
-        with open(path, "rb") as image_file:
-            return base64.b64encode(image_file.read()).decode("ascii")
+        with open(path_value, "rb") as image_file:
+            encoded = base64.b64encode(image_file.read()).decode("ascii")
+        return "data:image/png;base64," + encoded
     except Exception:
-        return None
+        return ""
 
 
 def point_on_img(filename='01.png', F1=1, D=1, D2=1):
@@ -222,12 +223,14 @@ D3 = random.randint(1, 7)
 D21 = D2 + 1
 D20 = D2 * 50
 D30 = D3 * 50
-directoryPath = 'C:/latex/im_21/'
+base_dir = os.getcwd()
 taskName = 'T_6_17_14'
 N = random.randint(1, 4)
 imagesIndex = str(D1) + '_' + str(D2) + '_' + str(D3) + '_' + str(N) + '.png'
-if not isdir(directoryPath + taskName): mkdir(directoryPath + taskName)
-task_image_path = point_on_img(directoryPath + taskName + '/imq1' + imagesIndex, D1, D20, D30)
+out_dir = os.path.join(base_dir, taskName)
+os.makedirs(out_dir, exist_ok=True)
+task_image_name = 'imq1' + imagesIndex
+task_image_path = point_on_img(os.path.join(out_dir, task_image_name), D1, D20, D30)
 if D1 == 1:
     B1 = " (" + str(D2) + ",-" + str(D3) + ") "
     B2 = " (" + str(D21) + "," + str(D3) + ") "
@@ -292,21 +295,18 @@ if D1 == 1 or D1 == 2:
     ddd = " Симетричната на А спрямо абцисната ос, ще има същата абциса. \n"
     ddd1 = " Симетричната на точката А има координати (" + str(D2) + ", -" + str(D3) + "). "
     bbb = bbb + ddd + ddd1
-    solution_image_path = spoint_on_img(directoryPath + taskName + '/ims1' + imagesIndex, D1, D20, D30)
+    solution_image_name = 'ims1' + imagesIndex
+    solution_image_path = spoint_on_img(os.path.join(out_dir, solution_image_name), D1, D20, D30)
 elif D1 == 3 or D1 == 4:
     bbb = " точката А е с отрицателна ордината. Симетричната на А спрямо абцисната ос, ще има ордината " + str(D3) + ".\n"
     ddd = " Симетричната на А спрямо абцисната ос, ще има същата абциса. \n"
     ddd1 = " Симетричната на точката А има координати (" + str(D2) + "," + str(D3) + "). "
     bbb = bbb + ddd + ddd1
-    solution_image_path = spoint_on_img(directoryPath + taskName + '/ims1' + imagesIndex, D1, D20, D30)
+    solution_image_name = 'ims1' + imagesIndex
+    solution_image_path = spoint_on_img(os.path.join(out_dir, solution_image_name), D1, D20, D30)
 
-images = []
-task_base64 = encode_png_base64(task_image_path)
-if task_base64:
-    images.append({"kind": "TASK", "mime": "image/png", "base64": task_base64})
-solution_base64 = encode_png_base64(solution_image_path)
-if solution_base64:
-    images.append({"kind": "SOLUTION", "mime": "image/png", "base64": solution_base64})
+task_uri = to_data_uri(task_image_path)
+solution_uri = to_data_uri(solution_image_path)
 
 payload = {
     "task": aa.strip(),
@@ -314,6 +314,9 @@ payload = {
     "answer": answer,
     "hint": aaa,
     "solution": bbb,
-    "images": images,
+    "images": {
+        "task": [task_uri] if task_uri else [],
+        "solution": [solution_uri] if solution_uri else [],
+    },
 }
 print(json.dumps(payload, ensure_ascii=False))

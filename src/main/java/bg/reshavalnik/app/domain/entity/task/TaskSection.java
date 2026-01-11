@@ -15,8 +15,7 @@ public class TaskSection {
 
     @Id private String id;
 
-    @UniqueElements
-    private String taskName;
+    @UniqueElements private String taskName;
 
     private String sectionId;
 }

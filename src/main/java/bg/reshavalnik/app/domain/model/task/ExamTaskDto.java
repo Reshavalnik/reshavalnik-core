@@ -15,4 +15,6 @@ public class ExamTaskDto {
     private String hint;
     private String imageBase64;
     private List<ImageDto> images;
+    private List<String> taskImages;
+    private List<String> solutionImages;
 }

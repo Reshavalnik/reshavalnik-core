@@ -31,6 +31,8 @@ public class ScriptService {
     @Value("${python.bin:python}")
     private String pythonBin;
 
+    private String pythonBinPath;
+
     private final GridFsTemplate gridFs;
 
     private final String tempFilePath;
@@ -40,6 +42,17 @@ public class ScriptService {
             @Value("${temp.file.path:${java.io.tmpdir}}") String tempFilePath) {
         this.gridFs = gridFs;
         this.tempFilePath = tempFilePath;
+    }
+
+    @jakarta.annotation.PostConstruct
+    void initPythonBinPath() {
+        java.nio.file.Path binPath = java.nio.file.Path.of(pythonBin);
+        if (!binPath.isAbsolute()) {
+            String baseDir = System.getProperty("user.dir");
+            binPath = java.nio.file.Path.of(baseDir).resolve(binPath).normalize();
+        }
+        pythonBinPath = binPath.toString();
+        log.info("Resolved python.bin to {}", pythonBinPath);
     }
 
     /** Writes a Python file to GridFS and returns the generated ID. */
@@ -97,13 +110,18 @@ public class ScriptService {
 
     /** 2) Runs a prepared Python script ONE time and returns stdout+stderr as a String */
     private String runOnce(Path scriptPath) throws IOException, InterruptedException {
-        ProcessBuilder pb = new ProcessBuilder(pythonBin, scriptPath.toAbsolutePath().toString());
+        Path runDir = Files.createTempDirectory(Path.of(tempFilePath), "run-");
+        ProcessBuilder pb =
+                new ProcessBuilder(pythonBinPath, scriptPath.toAbsolutePath().toString());
         pb.environment().put("PYTHONIOENCODING", "UTF-8");
+        pb.environment().put("TEMP_CACHE_DIR", runDir.toAbsolutePath().toString());
+        pb.directory(runDir.toFile());
         pb.redirectErrorStream(true);
 
         Process p = pb.start();
 
         StringBuilder output = new StringBuilder();
+        output.append("RUN_DIR:").append(runDir.toAbsolutePath()).append(System.lineSeparator());
         try (BufferedReader reader =
                 new BufferedReader(
                         new InputStreamReader(p.getInputStream(), StandardCharsets.UTF_8))) {
